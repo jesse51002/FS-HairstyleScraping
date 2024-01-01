@@ -35,7 +35,6 @@ with open(STYLES_FILES,'r') as file:
         line = x.strip()
         if len(line) < 2 or line[:2] == "--":
             continue
-            
         styles.append(line)
 
 
