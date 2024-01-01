@@ -90,7 +90,7 @@ class GoogleImageScraper():
          self.url = "https://www.google.com/search?q=%s&source=lnms&tbm=isch&sa=X&ved=2ahUKEwie44_AnqLpAhUhBWMBHUFGD90Q_AUoAXoECBUQAw&biw=1920&bih=947&as_epq=&as_oq=&as_eq=&cr=&as_sitesearch=&tbs=isz:lt,islt:svga,itp:face"%(self.search_key)
          
     
-    def find_image_urls(self, global_data):
+    def find_image_urls(self, stop_func=None):
         self.update_url()
         
         """
@@ -111,8 +111,8 @@ class GoogleImageScraper():
         time.sleep(3)
         while self.number_of_images > count and missed_count < self.max_missed:
             # Exit early if it needs to
-            if global_data is not None:
-                if global_data["Exit"]:
+            if stop_func is not None:
+                if stop_func():
                     return
             
             if indx_2 > 0:

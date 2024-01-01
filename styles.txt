@@ -1,3 +1,22 @@
+-- Bobs (Different lenghts and textures)
 straight long bob hairstyle
 wavy long bob hairstyle
 curly long bob hairstyle
+
+straight medium length bob hairstyle
+wavy medium length bob hairstyle
+curly medium length bob hairstyle
+
+straight short bob hairstyle
+wavy short bob hairstyle
+curly short bob hairstyle
+
+
+-- Afros
+big afro hairstyle
+medium afro hairstyle
+mini afro hairstyle
+
+-- Dreads/Locks
+long length two strand twist hairstyle
+medium length two strand twist hairstyle

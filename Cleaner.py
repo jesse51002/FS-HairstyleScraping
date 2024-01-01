@@ -12,12 +12,17 @@ ANGLE_FACE_MULT = 2
 MINIMUM_QUALITY = 0
 
 # This is mirrored to negative angles as well
-ALLOWED_ANGLES = np.array([
-    [[0, 20], [70, 90]], # pitch (up and down)
-    [[0, 20], [55, 90]], # yaw  (side to side)
-    [[0, 20], [0, 35]], # roll (angling side to side)
-])
+# Format
+# [ 
+#   pitch (up and down),
+#   yaw  (side to side),
+#   roll (angling side to side)
+# ]
 
+ALLOWED_ANGLES = {
+    "front": np.array([[0, 20], [0, 20], [0, 20]]),
+    "side": np.array([[0, 35], [30, 90], [0, 35]])
+    }
 
 # Create model
 # Weights are automatically downloaded
@@ -100,7 +105,7 @@ def crop_image(img, res_check=True, visualize=False):
     return boundedimage, angle_image
         
 
-def clean_img(path, visualize=False, res_check=True, angle_check=True):
+def clean_img(path, direction="front", visualize=False, res_check=False, angle_check=True):
     img = cv2.imread(path)
     img, angle_image = crop_image(img, visualize=visualize, res_check=res_check)
     # If image isn't valid then return 
@@ -111,26 +116,19 @@ def clean_img(path, visualize=False, res_check=True, angle_check=True):
     if visualize:
         print(pitch, yaw, roll)
     
+    # Checks the validity of the picture face angle based on the given direction
     if angle_check:
-        invalid_angle = True
-        for i in range(ALLOWED_ANGLES.shape[1]):
-            if abs(pitch[0]) < ALLOWED_ANGLES[0, i, 0] or abs(pitch[0]) > ALLOWED_ANGLES[1, i, 1]:
-                continue
-            if abs(yaw[0]) < ALLOWED_ANGLES[1, i, 0] or abs(yaw[0]) > ALLOWED_ANGLES[1, i, 1]:
-                continue
-            if abs(roll[0]) < ALLOWED_ANGLES[2, i, 0] or abs(roll[0]) > ALLOWED_ANGLES[2, i, 1]:
-                continue
-            
-            # Found a valid angle
-            invalid_angle = False
-            break
-                
-        # If no valid angle was found then return None
-        if invalid_angle:
-            print("Invalid Angle... Rejected")
+        if abs(pitch[0]) < ALLOWED_ANGLES[direction][0, 0] or abs(pitch[0]) > ALLOWED_ANGLES[direction][0, 1]:
+            print("Invalid Pitch Angle... Rejected")
             return None
-        
+        if abs(yaw[0]) < ALLOWED_ANGLES[direction][1, 0] or abs(pitch[0]) > ALLOWED_ANGLES[direction][1, 1]:
+            print("Invalid Yaw Angle... Rejected")
+            return None
+        if abs(roll[0]) < ALLOWED_ANGLES[direction][2, 0] or abs(roll[0]) > ALLOWED_ANGLES[direction][2, 1]:
+            print("Invalid Roll Angle... Rejected")
+            return None
     
+    # Visualize  
     if visualize:
         model.draw_axis(img, yaw, pitch, roll)
         model.draw_axis(angle_image, yaw, pitch, roll)
@@ -144,4 +142,4 @@ def clean_img(path, visualize=False, res_check=True, angle_check=True):
 
 
 if __name__ == "__main__":
-    clean_img("images/raw_images/afro_bun/side/8eca278a8a15788d52ba0df6eb9a0a05.jpg", visualize=True, res_check=False, angle_check=False)
+    clean_img("./images/download.jpg", visualize=True, res_check=False, angle_check=False)

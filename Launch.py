@@ -3,6 +3,7 @@ import os
 import msvcrt
 import cv2
 import threading
+from multiprocessing import Process
 import matplotlib.pyplot as plt
 import time
 import numpy as np
@@ -15,45 +16,62 @@ RAW_IMAGES_DIR = "./images/raw_images"
 CLEAN_IMAGES_DIR = "./images/clean_images"
 ACCEPTED_IMAGES_DIR = "./images/accepted_images"
 
-JSON_SAVE_FILE = "./progress.json"
+FINIHSED_CLEAN_TXT = "./images/finished_clean"
+
 STYLES_FILES = "./styles.txt"
+
+STOP_FILE  = "stop.json"
 
 directions = {
     "front": "",
     "side": " side profile"
 }
 
-progress = {
-    "scraped_styles": [],
-    }
-
-# Load progress
-if os.path.isfile(JSON_SAVE_FILE):
-    """
-    with open(JSON_SAVE_FILE,'r') as json_file:
-        progress = json.load(json_file)
-    """
 
 # Loads Styles
 styles = [] 
 with open(STYLES_FILES,'r') as file:
-   styles = [x.strip() for x in file.readlines()]
+    for x in file.readlines():
+        line = x.strip()
+        if len(line) < 2 or line[:2] == "--":
+            continue
+            
+        styles.append(line)
+
+
+def setStopFile(stop):
+    file = open(STOP_FILE, 'w')
+    json.dump({"Stop": stop}, file)
+    file.close()
+    
+def getStop():
+    with open(STOP_FILE, 'r') as file:
+        stop = json.load(file)
+        return(stop["Stop"])
 
 # Scaper
-def ScrapeAndClean(global_data):
+def ScrapeAndClean():
+    cleaned = []
+    with open(FINIHSED_CLEAN_TXT, 'r') as clean_file:
+        cleaned = [x.strip() for x in clean_file.readlines()]
+    
     for style in styles:
         # End early if wants to exit
-        if global_data["Exit"]:
-            return
-        
-        global_data["Finished"][style] = {"Completed": False}
-        
+        if getStop():
+            break
+                
         for direction in directions.keys():
-            # End early if wants to exit
-            if global_data["Exit"]:
-                return
             
-            global_data["Finished"][style][direction] = False
+            file_txt = f"{style}:{direction}"
+            
+            # If already cleaned then skip it
+            if file_txt in cleaned:
+                break
+            
+            # End early if wants to exit
+            if getStop():
+                break
+            
             
             print(f"Starting Scape and Clean for {style} in {direction}")
             
@@ -67,23 +85,17 @@ def ScrapeAndClean(global_data):
                 os.makedirs(clean_dir)
             
             # Scapes the stlye and direction
-            SCStyDir(style, direction, raw_dir, clean_dir,global_data)
+            SCStyDir(style, direction, raw_dir, clean_dir)
             
-            global_data["Finished"][style][direction] = True
+            with open(FINIHSED_CLEAN_TXT, 'a') as clean_file:
+                clean_file.write(f'\n{file_txt}')
+          
             
-        global_data["Finished"][style]["Completed"] = True
-    
-    global_data["CleanFinished"] = True
-            
-    
+    print("Finished Scraping and Cleaning!!!")
     
             
 # Scrapes a specific 
-def SCStyDir(style, direction, raw_dir, clean_dir, global_data):
-    
-    
-    # Scapes and store into the folder
-    
+def SCStyDir(style, direction, raw_dir, clean_dir):    
     # Thread Lock for downloaded_paths
     lock = threading.Lock()
     downloaded_paths = []
@@ -102,13 +114,13 @@ def SCStyDir(style, direction, raw_dir, clean_dir, global_data):
     
     # Scapes and downloads
     hide_browser = False  
-    scrape_thread = threading.Thread(target=scrape, args=(global_data, f"{style}{directions[direction]}", raw_dir, img_download_callback, finished_callback, hide_browser))
+    scrape_thread = threading.Thread(target=scrape, args=(getStop, f"{style}{directions[direction]}", raw_dir, img_download_callback, finished_callback, hide_browser))
     scrape_thread.start()
     
     # Loop until scraping is finished and all cleaned
     while not finished["Finished"] or len(downloaded_paths) > 0 :
         # End early if wants to exit
-        if global_data["Exit"]:
+        if getStop():
             return
         
         # if nothing has been downloaded yet then wait
@@ -118,7 +130,7 @@ def SCStyDir(style, direction, raw_dir, clean_dir, global_data):
         
         # Gets image and cleans it
         raw_img = downloaded_paths[0]
-        cleaned = clean_img(raw_img)
+        cleaned = clean_img(raw_img, direction=direction)
         
         # Removes the raw img after it is cleaned       
         # os.remove(raw_img)
@@ -139,31 +151,52 @@ def SCStyDir(style, direction, raw_dir, clean_dir, global_data):
     scrape_thread.join()
     
 # Finds valid cleaned image to show to user
-def find_image(global_data):
+current_dir, cur_style, cur_direction = None, None, None
+def find_image():
+    global current_dir, cur_style, cur_direction
+    
+    cleaned = []
+    if os.path.isfile(FINIHSED_CLEAN_TXT):
+        with open(FINIHSED_CLEAN_TXT, 'r') as clean_file:
+            cleaned = [x.strip() for x in clean_file.readlines()]
+    
+    if current_dir is not None:
+        # Empty style direction directory handling 
+        if len(os.listdir(current_dir)) == 0:
+            # If its finsihed and its empty dont use this
+            if file_txt in cleaned:
+                current_dir = None
+            else:
+                return None, None, None
+        # Uses the first found image
+        else:
+            return os.path.join(current_dir, os.listdir(current_dir)[0]), cur_style, cur_direction
+    
     # Loops through all the styles folder
     for style in os.listdir(CLEAN_IMAGES_DIR):
         style_dir = os.path.join(CLEAN_IMAGES_DIR, style)
         
         # Empty style directory handling 
         if len(os.listdir(style_dir)) == 0:
-            # If its finsihed and its empty then delete the folder
-            if style not in global_data["Finished"] or global_data["Finished"][style]["Completed"]:
-                os.rmdir(style_dir)
+            os.rmdir(style_dir)
             continue
         
         # Loops throught all the styles directions
         for direction in os.listdir(style_dir):
+            file_txt = f"{style}:{direction}"
+            
             direction_dir = os.path.join(style_dir, direction)
             
             # Empty style direction directory handling 
             if len(os.listdir(direction_dir)) == 0:
                 # If its finsihed and its empty then delete the folder
-                if direction not in global_data["Finished"][style] or  global_data["Finished"][style][direction]:
+                if file_txt in cleaned:
                     os.rmdir(direction_dir)
                 continue
             
+            current_dir, cur_style, cur_direction = direction_dir, style, direction
             # Uses the first found image
-            return os.path.join(direction_dir, os.listdir(direction_dir)[0]), style, direction
+            return os.path.join(current_dir, os.listdir(current_dir)[0]), cur_style, cur_direction
         
     return None, None, None
 
@@ -171,7 +204,7 @@ def find_image(global_data):
 
 # Style parser
 # Scapes, cleans and shows cleaned image
-def parse_style(global_data): 
+def parse_style(scrape_clean_process): 
     
     plt.imshow(np.zeros((500,500)))
     plt.xlabel(f"Starting...")
@@ -179,24 +212,23 @@ def parse_style(global_data):
     plt.show()
     plt.pause(0.2)
     
-    while not global_data["Exit"]:
-        img_pth, style, direction = find_image(global_data)
+    while not getStop():
+        img_pth, style, direction = find_image()
         
         if img_pth is None:
-            if global_data["CleanFinished"]:
+            if scrape_clean_process is None or not scrape_clean_process.is_alive():
                 break
             
             plt.imshow(np.zeros((500,500)))
             plt.xlabel(f"Waiting for cleaned image... H to stop")
             
-            
             if msvcrt.kbhit():
                 key = msvcrt.getch().decode("utf-8")
                 if key == "H" or key == "h":
-                    global_data["Exit"] = True
+                    setStopFile(True)
                     break
             
-            plt.pause(0.2)
+            plt.pause(0.5)
             
             continue
         
@@ -214,7 +246,7 @@ def parse_style(global_data):
         plt.xlabel(f"{style} hairstyle in {direction} ||| 'A' to Accept ::: 'R' to reject ::: 'H' to end")
         
         while True:
-            plt.pause(0.2)
+            plt.pause(0.05)
             
             key = None
             if msvcrt.kbhit():
@@ -235,7 +267,7 @@ def parse_style(global_data):
                 break
             # Forcefully ends the application
             elif key == "H" or key == "h":
-                global_data["Exit"] = True
+                setStopFile(True)
                 break
             else:     
                 print("Invalid Key, Input valid key")
@@ -246,13 +278,23 @@ def parse_style(global_data):
     plt.ioff()
 
 # Starts the application
-def launch():
-    global_data = {
-        "Finished": {},
-        "Exit": False,
-        "CleanFinished": False
-    }
+def launch():  
+    # Sets stop to false
+    setStopFile(False)
     
+    
+    print("""
+          Choose mode
+            1. Scrape, Clean and Accept
+            2. Only Scrape and Clean
+            3. Only Accept
+          """)
+    
+    chosen = int(input())
+    while chosen < 1 or chosen > 3:
+        print(f"{chosen} is an invalid choice, pick a valid choice")
+        chosen = int(input())
+        
     # Makes importart paths
     if not os.path.exists(RAW_IMAGES_DIR):
         os.makedirs(RAW_IMAGES_DIR)
@@ -260,23 +302,35 @@ def launch():
         os.makedirs(CLEAN_IMAGES_DIR)
     if not os.path.exists(ACCEPTED_IMAGES_DIR):
         os.makedirs(ACCEPTED_IMAGES_DIR)
-    
-    # Scapes and downloads
-    scrape_clean_thread = threading.Thread(target=ScrapeAndClean, args=(global_data,))
-    scrape_clean_thread.start()
+        
+    scrape_clean_process = None
+    if chosen == 1 or chosen == 2:
+        # Scapes and downloads
+        scrape_clean_process = Process(target=ScrapeAndClean, args=())
+        scrape_clean_process.start()
 
-    parse_style(global_data)
+    if chosen == 1 or chosen == 3:
+        parse_style(scrape_clean_process)
+    elif chosen == 2:
+        while scrape_clean_process.is_alive():
+            print("'H' TO STOP THE SCAPING")
+            if msvcrt.kbhit():
+                key = msvcrt.getch().decode("utf-8")
+                if key == "H" or key == "h":
+                    # Sets stop to True
+                    setStopFile(True)
+                    break
+            
+            time.sleep(1)
     
     
     print("Waiting for Clean and Scrape thread to end...")
-    scrape_clean_thread.join()
-        
+    if scrape_clean_process is not None:
+        scrape_clean_process.kill()
+        scrape_clean_process.join()
+            
     plt.close()  
     
 if __name__ == "__main__":
     launch()
-    
-    # Write save file
-    with open(JSON_SAVE_FILE,'w') as json_file:
-        progress = json.dump(progress, json_file)
     
