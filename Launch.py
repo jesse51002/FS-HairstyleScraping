@@ -51,6 +51,11 @@ def getStop():
 # Scaper
 def ScrapeAndClean():
     cleaned = []
+    
+    if not os.path.isfile(FINIHSED_CLEAN_TXT):
+        file = open(FINIHSED_CLEAN_TXT, 'w')
+        file.close()
+    
     with open(FINIHSED_CLEAN_TXT, 'r') as clean_file:
         cleaned = [x.strip() for x in clean_file.readlines()]
     
@@ -323,9 +328,11 @@ def launch():
             time.sleep(1)
     
     
-    print("Waiting for Clean and Scrape thread to end...")
+    
     if scrape_clean_process is not None:
         scrape_clean_process.kill()
+        if scrape_clean_process.is_alive():
+            print("Waiting for Clean and Scrape thread to end...")
         scrape_clean_process.join()
             
     plt.close()  

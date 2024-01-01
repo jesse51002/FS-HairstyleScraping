@@ -20,8 +20,8 @@ MINIMUM_QUALITY = 0
 # ]
 
 ALLOWED_ANGLES = {
-    "front": np.array([[0, 20], [0, 20], [0, 20]]),
-    "side": np.array([[0, 35], [30, 90], [0, 35]])
+    "front": np.array([[0, 13], [0, 13], [0, 13]]),
+    "side": np.array([[0, 35], [25, 90], [0, 35]])
     }
 
 # Create model
@@ -121,7 +121,7 @@ def clean_img(path, direction="front", visualize=False, res_check=False, angle_c
         if abs(pitch[0]) < ALLOWED_ANGLES[direction][0, 0] or abs(pitch[0]) > ALLOWED_ANGLES[direction][0, 1]:
             print("Invalid Pitch Angle... Rejected")
             return None
-        if abs(yaw[0]) < ALLOWED_ANGLES[direction][1, 0] or abs(pitch[0]) > ALLOWED_ANGLES[direction][1, 1]:
+        if abs(yaw[0]) < ALLOWED_ANGLES[direction][1, 0] or abs(yaw[0]) > ALLOWED_ANGLES[direction][1, 1]:
             print("Invalid Yaw Angle... Rejected")
             return None
         if abs(roll[0]) < ALLOWED_ANGLES[direction][2, 0] or abs(roll[0]) > ALLOWED_ANGLES[direction][2, 1]:
@@ -142,4 +142,4 @@ def clean_img(path, direction="front", visualize=False, res_check=False, angle_c
 
 
 if __name__ == "__main__":
-    clean_img("./images/download.jpg", visualize=True, res_check=False, angle_check=False)
+    clean_img("images/raw_images/straight long bob hairstyle/side/straightlongbobhairstylesideprofile16.jpeg", visualize=True, res_check=False, angle_check=False)
