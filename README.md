@@ -15,7 +15,7 @@ Automating Scraping and Cleaning of images. It then creates a simple GUI to show
 
 ```sh
 # clone and cd
-git clone https://github.com/jesse51002/FS-WebScraping.git && cd FS-DjangoBackend
+git clone https://github.com/jesse51002/FS-WebScraping.git && cd FS-WebScraping
 
 # create conda environment
 conda create -n WebScraping python=3.12
@@ -37,7 +37,7 @@ python Launch.py
 
 ## Tools
 
-**Previewing a query**
+**Previewing a Google query**
 
 - Open `tools/openquery.py` and change the `query="wanted query"`. Then run the below script to open the page in the browser.
 ```sh
