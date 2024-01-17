@@ -36,8 +36,7 @@ class GoogleImageScraper():
                  min_resolution=(0, 0), 
                  max_resolution=(1920, 1080), 
                  max_missed=10, 
-                 img_download_callback=None,
-                 finish_scrape_callback=None
+                 img_download_callback=None
                  ):
         #check parameter types
         if (type(number_of_images)!=int):
@@ -56,11 +55,13 @@ class GoogleImageScraper():
             try:
                 #try going to www.google.com
                 options = Options()
-                if(headless):
-                    options.add_argument('--headless')
+                #if(headless):
+                    #options.add_argument('--headless')
+                options.set_headless(headless)
                 driver = webdriver.Chrome(webdriver_path, chrome_options=options)
                 driver.set_window_size(1400,1050)
                 driver.get("https://www.google.com")
+
                 try:
                     WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "W0wltc"))).click()
                 except Exception as e:
@@ -84,7 +85,6 @@ class GoogleImageScraper():
         self.max_resolution = max_resolution
         self.max_missed = max_missed
         self.img_download_callback = img_download_callback
-        self.finish_scrape_callback = finish_scrape_callback
 
     def update_url(self):
          self.url = "https://www.google.com/search?q=%s&source=lnms&tbm=isch&sa=X&ved=2ahUKEwie44_AnqLpAhUhBWMBHUFGD90Q_AUoAXoECBUQAw&biw=1920&bih=947&as_epq=&as_oq=&as_eq=&cr=&as_sitesearch=&tbs=isz:lt,islt:svga,itp:face"%(self.search_key)
@@ -175,20 +175,12 @@ class GoogleImageScraper():
                 time.sleep(3)
             except Exception:
                 time.sleep(1)
-                
-                
-        if self.finish_scrape_callback is not None:
-            self.finish_scrape_callback()
-                
-                
-
-
 
         self.driver.quit()
         print("[INFO] Google search ended")
         return image_urls
 
-    def save_images(self,image_urls, force_idx=None, keep_filenames= False):
+    def save_images(self,image_urls, force_idx=None, keep_filenames=True):
         #save images into file directory
         """
             This function takes in an array of image urls and save it into the given image path/directory.
@@ -227,7 +219,7 @@ class GoogleImageScraper():
                                      
                         image_resolution = image_from_web.size
                         if image_resolution != None:
-                            print(image_resolution)
+                            # print(image_resolution)
                             if image_resolution[0]<self.min_resolution[0] or image_resolution[1]<self.min_resolution[1] or image_resolution[0]>self.max_resolution[0] or image_resolution[1]>self.max_resolution[1]:
                                 image_from_web.close()
                                 os.remove(image_path)

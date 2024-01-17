@@ -5,6 +5,7 @@ from supervision import Detections
 from PIL import Image
 import cv2
 
+
 MIN_CONFIDENCE = 0.5
 
 # download model
@@ -15,8 +16,8 @@ model = YOLO(model_path, task="detect")
 
 # inference
 
-def output_bb(imgs, confidence = MIN_CONFIDENCE):
-    output = model(imgs)[0]
+def output_bb(imgs, confidence = MIN_CONFIDENCE):    
+    output = model(imgs, verbose=False)[0]    
     results = Detections.from_ultralytics(output)
     
     cleaned_boxes = []
@@ -34,4 +35,4 @@ def output_bb(imgs, confidence = MIN_CONFIDENCE):
 
 if __name__ == "__main__":
 
-    print(output_bb(cv2.imread("images/raw_images/01211a956e57e04eb992609270334da9.jpg")))
+    print(output_bb(cv2.imread("images/damat.png")))
