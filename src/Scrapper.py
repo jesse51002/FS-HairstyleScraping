@@ -57,8 +57,8 @@ def hair_scrape(style_dic, clean_queue=None, lock=None):
                 continue 
             # Records that it finished scraping
             with lock:
-                with open(Constants.FINIHSED_RAW_TXT, 'a') as clean_file:
-                    clean_file.write(f'\n{style}/{style_type}')
+                with open(Constants.FINIHSED_RAW_TXT, 'a') as raw_finished_file:
+                    raw_finished_file.write(f'\n{style}/{style_type}')
                 
 
 if __name__ == "__main__":

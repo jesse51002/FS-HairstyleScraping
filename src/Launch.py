@@ -8,9 +8,11 @@ import time
 import numpy as np
 
 from Preprocessor import Preprocess
-from Utils import setStopFile, getStop, find_images, split_hair_dict, get_file_path, delete_empty
-from Querys import get_queries
+from Utils import setStopFile, getStop, find_images, \
+    split_hair_dict, get_file_path, delete_empty, split_body_arr
+from Querys import get_queries, create_body_queries
 from Scrapper import hair_scrape
+from FlickrScrape.flickr_scraper import body_scrape
 
 
 import Constants
@@ -171,20 +173,37 @@ def launch():
     scrape_done_lock = Lock()           
     
     if chosen == 1 or chosen == 2:
+        splits = None
+        scrape_func = None
+        scrape_processes_count = 1
+        clean_processes_count = 1
         
         if mode == "hair":
-            styles = split_hair_dict(get_queries(), Constants.HAIR_SCRAPE_PROCESSES)
-            for i in range(Constants.HAIR_SCRAPE_PROCESSES):
-                # Scapes and downloads
-                scrape_process = Process(target=hair_scrape, args=(styles[i], clean_queue, scrape_done_lock))
-                scrape_process.start()
-                scrape_processes.append(scrape_process)
+            splits = split_hair_dict(get_queries(), Constants.HAIR_SCRAPE_PROCESSES)
+            scrape_func = hair_scrape
+            scrape_processes_count = Constants.HAIR_SCRAPE_PROCESSES
+            clean_processes_count = Constants.HAIR_CLEAN_PROCESSES
+        elif mode == "body":
+            splits = split_body_arr(create_body_queries(), Constants.BODY_SCRAPE_PROCESSES)
+            scrape_func = body_scrape
+            scrape_processes_count = Constants.BODY_SCRAPE_PROCESSES
+            clean_processes_count = Constants.BODY_CLEAN_PROCESSES
         
-            for _ in range(Constants.HAIR_CLEAN_PROCESSES):
-                # preprocesses
-                clean_process = Process(target=Preprocess, args=(clean_queue, accept_queue, root_clean_dir, root_raw_dir))
-                clean_process.start()
-                clean_processes.append(clean_process)
+        
+        for i in range(scrape_processes_count):
+            # Scapes and downloads
+            scrape_process = Process(target=scrape_func, args=(splits[i], clean_queue, scrape_done_lock))
+            scrape_process.start()
+            scrape_processes.append(scrape_process)
+        """
+        
+        for _ in range(clean_processes_count):
+            # preprocesses
+            clean_process = Process(target=Preprocess, args=(clean_queue, accept_queue, root_clean_dir, root_raw_dir, mode))
+            clean_process.start()
+            clean_processes.append(clean_process)
+        """
+            
 
     if chosen == 1 or chosen == 3:
         parse_style(accept_queue, root_clean_dir, root_accepted_dir, clean_processes)
@@ -199,7 +218,7 @@ def launch():
                 
             cleaning = False
             # Checks if still scraping
-            for clean_p in scrape_processes:
+            for clean_p in clean_processes:
                 if clean_p.is_alive():
                     cleaning = True
                     break

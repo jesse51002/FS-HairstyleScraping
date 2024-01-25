@@ -1,9 +1,9 @@
 import os
 import time
 import numpy as np
+import Constants
 
 
-STYLES_FILES = "./styles.txt"
 
 ATTRIBUTES = {
     "texture": ["straight", "wavy", "curly"],
@@ -75,7 +75,7 @@ def get_lines():
     # Loads Styles lines from txt file
     # Ignoring comments
     styles = [] 
-    with open(STYLES_FILES,'r') as file:
+    with open(Constants.STYLES_FILES,'r') as file:
         for x in file.readlines():
             line = x.strip()
             if len(line) < 2 or line[:2] == "--" or line[0] == "#":
@@ -83,7 +83,23 @@ def get_lines():
             styles.append(line)
     
     return styles
-            
+    
+def create_body_queries():
+    queries = [] 
+    with open(Constants.BODY_QUERIES_FILES,'r') as file:
+        for x in file.readlines():
+            line = x.strip()
+            if len(line) < 2 or line[:2] == "--" or line[0] == "#":
+                continue
+            queries.append(line + " portrait")  
+    
+    # Instanties then countries constant
+    with open(Constants.COUNTRIES_FILES,'r') as file:
+        for x in file.readlines():
+            line = x.strip()
+            queries.append(line + " portrait")  
+        
+    return queries      
             
 if __name__ == "__main__":
     get_queries()

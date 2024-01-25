@@ -6,11 +6,14 @@ from sixdrepnet import SixDRepNet
 import matplotlib.pyplot as plt
 import numpy as np
 
-from Detection import output_bb
+from HumanParsing.segment import body_model
+from Detection import detection_model
 
-SIZE_FACE_MULT = 2.75
+SIZE_FACE_MULT = 3.5
 ANGLE_FACE_MULT = 2
-MINIMUM_QUALITY = 300
+MINIMUM_QUALITY = 512
+
+MAX_QUALITY = 1024
 
 # This is mirrored to negative angles as well
 # Format
@@ -26,9 +29,9 @@ ALLOWED_ANGLES = {
     }
 
 
-def crop_image(img, res_check=True, visualize=False, bottom_extend=False, max_faces=None):
+def crop_image(img, detect_model :detection_model, res_check=True, visualize=False, bottom_extend=False, max_faces=None):
     # Detect faces
-    faces = output_bb(img)
+    faces = detect_model.inference(img)
 
     # No face detected
     if len(faces) == 0:
@@ -47,10 +50,11 @@ def crop_image(img, res_check=True, visualize=False, bottom_extend=False, max_fa
         mid_x, mid_y = int(x + w/2), int(y + h/2)
         max_size = int(max(w,h) / 2)
         
+        total_res = int(max_size * SIZE_FACE_MULT * 2)
         
         # Resolution checker
-        if res_check and max_size * SIZE_FACE_MULT * 2 < MINIMUM_QUALITY:
-            print("Resolution wasnt big enough... Rejected")
+        if res_check and total_res < MINIMUM_QUALITY:
+            print(f"{total_res} Resolution wasnt big enough... Rejected")
             continue
         if visualize:
             print("Resolution: ", max_size * SIZE_FACE_MULT * 2)
@@ -117,9 +121,50 @@ def crop_image(img, res_check=True, visualize=False, bottom_extend=False, max_fa
     return bounded_images, angle_images
         
 
-def clean_img(model, path, visualize=False, res_check=False, save_path=None, bottom_extend=False, max_faces=None):
-    raw_img = cv2.imread(path)
-    imgs, angle_images = crop_image(raw_img, visualize=visualize, res_check=res_check, bottom_extend=bottom_extend, max_faces=max_faces)
+def clean_img(model, path, detect_model: detection_model,
+              visualize=False, # printing and displayingh with matplotlib
+              body_parser: body_model=None, # Body segmentation mode
+              res_check=False, # Only accepts a minimum resolution
+              save_path=None, # Save path
+              bottom_extend=False, # Image must reach the bottom when cropped
+              max_faces=None, # Max faces in an image
+              body_width_contain=True, # Whole body width must be contained inside the image bounds
+              reject_greyscale=True, # Rejects greyscale images
+              downscale_big=True, # Downscales Images that are to big
+              ):
+    
+    try:
+        raw_img = cv2.imread(path)
+    except:
+        print("Image errored on Cv2 load... Rejected")
+        return None, None 
+    
+    if raw_img is None:
+        print("Image failed to load, image is None... Rejected")
+        return None, None 
+    
+    if reject_greyscale:
+        greyscale = np.array_equal(raw_img[:,:, 0], raw_img[:,:, 1]) and np.array_equal(raw_img[:,:, 1], raw_img[:,:, 2])
+        
+        if greyscale:
+            print("Images is greyscale... Rejected")
+            return None, None
+    
+    # makes sure the width of the body is contained in the image
+    if body_parser is not None and body_width_contain:
+        segmentation, _ = body_parser.inference(raw_img)
+        segmentation = segmentation.cpu().numpy()[0]
+        
+        test_area = np.stack([segmentation[:, :5], segmentation[:, -5:]], axis=1)
+        
+        invlaid_idxs = np.where(test_area != 0)
+        
+        if invlaid_idxs[0].shape[0] > 0:
+            print("Body width is not contained in the image... Rejected")
+            return None, None 
+        
+    
+    imgs, angle_images = crop_image(raw_img, detect_model, visualize=visualize, res_check=res_check, bottom_extend=bottom_extend, max_faces=max_faces)
     # If image isn't valid then return 
     if imgs is None:
         return None, None
@@ -148,7 +193,10 @@ def clean_img(model, path, visualize=False, res_check=False, save_path=None, bot
                 continue
             valid_direction = direction
             break
-            
+        
+        if downscale_big:
+            if img.shape[0] > MAX_QUALITY:
+                img = cv2.resize(img, (MAX_QUALITY,MAX_QUALITY))
         
         # Visualize  
         if visualize:
@@ -166,15 +214,23 @@ def clean_img(model, path, visualize=False, res_check=False, save_path=None, bot
         imgs_final.append(img)
         directions.append(valid_direction)
         
+        
     
     return imgs_final, directions
 
 
     # Preprocessor
-def Preprocess(clean_queue, accept_queue, root_clean_dir, root_raw_dir):    
+def Preprocess(clean_queue, accept_queue, 
+               root_clean_dir, root_raw_dir, 
+               mode="hair", delete_raw=True):    
     # Create model
     # Weights are automatically downloaded
     model = SixDRepNet()
+    
+    detect_model = detection_model()
+    
+    if mode == "body":
+        body_parser = body_model()
     
     # Loop until errors out from timeout (nothing more to clean)
     while True:
@@ -187,10 +243,19 @@ def Preprocess(clean_queue, accept_queue, root_clean_dir, root_raw_dir):
         if not os.path.isfile(raw_img):
             continue
         
-        cleaned_imgs, directions = clean_img(model, raw_img, res_check=True)
+        if mode == "hair":
+            cleaned_imgs, directions = clean_img(model, raw_img, detect_model=detect_model, res_check=True)
+        elif mode == "body":
+            cleaned_imgs, directions = clean_img(model, raw_img, detect_model=detect_model, body_parser=body_parser, res_check=True, bottom_extend=True)
         
-        # Removes the raw img after it is cleaned       
-        os.remove(raw_img)
+        
+        # Sleeps in order to stop my laptop gpu from overheating
+        if mode == "body":
+            time.sleep(1)
+        
+        # Removes the raw img after it is cleaned    
+        if delete_raw:   
+            os.remove(raw_img)
         
         
         # If image was not accepted continue
@@ -201,13 +266,17 @@ def Preprocess(clean_queue, accept_queue, root_clean_dir, root_raw_dir):
             cleaned = cleaned_imgs[i]
             direction = directions[i]
             
-            if direction is None:
+            if mode == "hair" and direction is None:
                 continue
             
             # Gets the relative path to raw root directory
             pth_list = get_file_path(raw_img, root_raw_dir[2:])
             # Gets the images save path
-            clean_dir = os.path.join(root_clean_dir, pth_list, direction)
+            if mode == "hair":
+                clean_dir = os.path.join(root_clean_dir, pth_list, direction)
+            else:
+                clean_dir = os.path.join(root_clean_dir, pth_list)
+            
             if not os.path.isdir(clean_dir):
                 os.makedirs(clean_dir)
             
@@ -228,6 +297,17 @@ if __name__ == "__main__":
     # Create model
     # Weights are automatically downloaded
     model = SixDRepNet()
+    
+    body_parser = body_model()
+    
+    detect_model = detection_model()
+    
     # clean_img("images/raw_images/straight long bob hairstyle/side/straightlongbobhairstylesideprofile16.jpeg", visualize=True, res_check=False, angle_check=False)
-    clean_img(model, "images/R2_1105.png", visualize=True, res_check=False, bottom_extend=True)
+    
+    body_data_test = "data/raw_images/test/"
+    
+    for img in os.listdir(body_data_test):
+        clean_img(model, os.path.join(body_data_test, img), detect_model=detect_model, body_parser=body_parser, visualize=True, res_check=True, bottom_extend=True)
+    
+    
     

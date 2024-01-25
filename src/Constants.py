@@ -1,11 +1,18 @@
 import os
 
+# Hair Styles
+STYLES_FILES = "./styles.txt"
+
 # Faces files
 RAW_IMAGES_DIR = "./images/raw_images"
 CLEAN_IMAGES_DIR = "./images/clean_images"
 ACCEPTED_IMAGES_DIR = "./images/accepted_images"
 
 FINIHSED_RAW_TXT = "./images/finished_raw"
+
+# Body Queries
+BODY_QUERIES_FILES = "./gan_dataset_tags.txt"
+COUNTRIES_FILES = "./countries"
 
 # Body files
 RAW_BODY_IMAGES_DIR = "./data/raw_images"
@@ -14,6 +21,7 @@ ACCEPTED_BODY_IMAGES_DIR = "./data/accepted_images"
 
 FINIHSED_BODY_RAW_TXT = "./data/finished_raw"
 
+FLICKR_CREDS_FILE = "./flickr_creds"
 
 # Stop file
 STOP_FILE  = "stop.json"
@@ -25,6 +33,8 @@ SCRAPE_ADDS = ["", "front profile", "side profile"]
 HAIR_CLEAN_PROCESSES = 1
 HAIR_SCRAPE_PROCESSES = 12
 
+BODY_CLEAN_PROCESSES = 1
+BODY_SCRAPE_PROCESSES = 1
 
 def make_dirs():
     # Makes hair importart paths
@@ -43,3 +53,6 @@ def make_dirs():
         os.makedirs(CLEAN_BODY_IMAGES_DIR)
     if not os.path.exists(ACCEPTED_BODY_IMAGES_DIR):
         os.makedirs(ACCEPTED_BODY_IMAGES_DIR)
+        
+        
+  

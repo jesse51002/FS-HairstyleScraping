@@ -12,7 +12,7 @@ def download_uri(uri, dir="./"):
     # Download a file from a given URI, including minimal checks
 
     # Download
-    f = dir + os.path.basename(uri)  # filename
+    f = os.path.join(dir, os.path.basename(uri))  # filename
     with open(f, "wb") as file:
         file.write(requests.get(uri, timeout=10).content)
 
@@ -29,3 +29,5 @@ def download_uri(uri, dir="./"):
         src = f  # original name
         f += f".{Image.open(f).format.lower()}"
         os.rename(src, f)  # rename
+    
+    return f
