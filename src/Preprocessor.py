@@ -248,10 +248,11 @@ def Preprocess(clean_queue, accept_queue,
         elif mode == "body":
             cleaned_imgs, directions = clean_img(model, raw_img, detect_model=detect_model, body_parser=body_parser, res_check=True, bottom_extend=True)
         
-        
+        """
         # Sleeps in order to stop my laptop gpu from overheating
         if mode == "body":
             time.sleep(1)
+        """
         
         # Removes the raw img after it is cleaned    
         if delete_raw:   
