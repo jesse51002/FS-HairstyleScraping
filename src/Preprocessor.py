@@ -8,6 +8,7 @@ import numpy as np
 
 from HumanParsing.segment import body_model
 from Detection import detection_model
+import Constants
 
 SIZE_FACE_MULT = 3.5
 ANGLE_FACE_MULT = 2
@@ -219,6 +220,67 @@ def clean_img(model, path, detect_model: detection_model,
     return imgs_final, directions
 
 
+def clean_raw_image(raw_img,
+                    root_clean_dir,
+                    root_raw_dir,
+                    mode="hair",
+                    delete_raw=True,
+                    model:SixDRepNet=None,
+                    detect_model:detection_model=None,
+                    body_parser: body_model=None
+                    ):
+    
+    if detect_model is None:
+        return None 
+    
+    if mode == "hair":
+        cleaned_imgs, directions = clean_img(model, raw_img, detect_model=detect_model, res_check=True)
+    elif mode == "body":
+        cleaned_imgs, directions = clean_img(model, raw_img, detect_model=detect_model, body_parser=body_parser, res_check=True, bottom_extend=True)
+
+        
+    # Removes the raw img after it is cleaned    
+    if delete_raw:   
+        os.remove(raw_img)
+        
+        
+    # If image was not accepted continue
+    if cleaned_imgs is None or directions is None:
+       return None
+    
+    cleaned_pths = []
+    
+    for i in range(len(cleaned_imgs)):
+        cleaned = cleaned_imgs[i]
+        direction = directions[i]
+            
+        if mode == "hair" and direction is None:
+            continue
+            
+        # Gets the relative path to raw root directory
+        pth_list = get_file_path(raw_img, root_raw_dir[2:])
+        # Gets the images save path
+        if mode == "hair":
+            clean_dir = os.path.join(root_clean_dir, pth_list, direction)
+        else:
+            clean_dir = os.path.join(root_clean_dir, pth_list)
+            
+        if not os.path.isdir(clean_dir):
+            os.makedirs(clean_dir)
+            
+        # Creates the name
+        base_split = os.path.basename(raw_img).split(".")
+        new_name = ".".join(base_split[:-1]) + str(i) + "." + base_split[-1]
+        final_pth = os.path.join(clean_dir, new_name)
+        
+        # Save the cleaned image
+        cv2.imwrite(final_pth, cleaned)
+        
+        cleaned_pths.append(final_pth)
+    
+    return cleaned_pths
+
+
     # Preprocessor
 def Preprocess(clean_queue, accept_queue, 
                root_clean_dir, root_raw_dir, 
@@ -229,8 +291,11 @@ def Preprocess(clean_queue, accept_queue,
     
     detect_model = detection_model()
     
+    
     if mode == "body":
         body_parser = body_model()
+    else:
+        body_parser = None
     
     # Loop until errors out from timeout (nothing more to clean)
     while True:
@@ -243,57 +308,74 @@ def Preprocess(clean_queue, accept_queue,
         if not os.path.isfile(raw_img):
             continue
         
-        if mode == "hair":
-            cleaned_imgs, directions = clean_img(model, raw_img, detect_model=detect_model, res_check=True)
-        elif mode == "body":
-            cleaned_imgs, directions = clean_img(model, raw_img, detect_model=detect_model, body_parser=body_parser, res_check=True, bottom_extend=True)
+        final_pths = clean_raw_image(
+            raw_img, root_clean_dir, root_raw_dir, mode=mode,
+            model=model,
+            detect_model=detect_model,
+            body_parser=body_parser
+            )
         
-        """
-        # Sleeps in order to stop my laptop gpu from overheating
-        if mode == "body":
-            time.sleep(1)
-        """
+        # Adds to the queue for acceptance
+        if accept_queue is not None:
+            for final_pth in final_pths:
+                accept_queue.put(final_pth)
+
+
+def PreprocessBodyFolder():
+    # Create model
+    # Weights are automatically downloaded
+    model = SixDRepNet()
+    
+    detect_model = detection_model()
+    
+    body_parser = body_model()
+    
+    # Instantitates finihsed clean txt
+    if not os.path.isfile(Constants.FINIHSED_BODY_CLEAN_TXT):
+        file = open(Constants.FINIHSED_BODY_CLEAN_TXT, 'w')
+        file.close()       
         
-        # Removes the raw img after it is cleaned    
-        if delete_raw:   
-            os.remove(raw_img)
-        
-        
-        # If image was not accepted continue
-        if cleaned_imgs is None or directions is None:
-            continue
-        
-        for i in range(len(cleaned_imgs)):
-            cleaned = cleaned_imgs[i]
-            direction = directions[i]
+    already_cleaned = []
+    # Instanties then countries constant
+    with open(Constants.FINIHSED_BODY_CLEAN_TXT,'r') as file:
+        for x in file.readlines():
+            line = x.strip()
+            already_cleaned.append(line)
+    
+    raw_dirs = os.listdir(Constants.RAW_BODY_IMAGES_DIR)
+    
+    # remvoes already cleaned images
+    for cleaned_dir in already_cleaned:
+        if cleaned_dir in raw_dirs:
+            raw_dirs.remove(cleaned_dir)
             
-            if mode == "hair" and direction is None:
+    for query_folder in raw_dirs:
+        folder_pth = os.path.join(Constants.RAW_BODY_IMAGES_DIR, query_folder)
+        for img_name in os.listdir(folder_pth):
+            # End early if wants to exit
+            if getStop():
+                return
+            
+            # Gets image and cleans it
+            raw_img = os.path.join(folder_pth, img_name)
+            if not os.path.isfile(raw_img):
                 continue
             
-            # Gets the relative path to raw root directory
-            pth_list = get_file_path(raw_img, root_raw_dir[2:])
-            # Gets the images save path
-            if mode == "hair":
-                clean_dir = os.path.join(root_clean_dir, pth_list, direction)
-            else:
-                clean_dir = os.path.join(root_clean_dir, pth_list)
+            clean_raw_image(
+                raw_img, 
+                Constants.CLEAN_BODY_IMAGES_DIR, 
+                Constants.RAW_BODY_IMAGES_DIR, 
+                mode="body",
+                model=model,
+                detect_model=detect_model,
+                body_parser=body_parser
+            )
             
-            if not os.path.isdir(clean_dir):
-                os.makedirs(clean_dir)
+        # Appends to the finished clean list
+        with open(Constants.FINIHSED_BODY_CLEAN_TXT, 'a') as clean_finished_file:
+            clean_finished_file.write(f'\n{query_folder}')
             
-            # Creates the name
-            base_split = os.path.basename(raw_img).split(".")
-            new_name = ".".join(base_split[:-1]) + str(i) + "." + base_split[-1]
-            final_pth = os.path.join(clean_dir, new_name)
-            
-            # Save the cleaned image
-            cv2.imwrite(final_pth, cleaned)
-            
-            # Adds to the queue for acceptance
-            if accept_queue is not None:
-                accept_queue.put(final_pth)
-       
-                        
+  
 if __name__ == "__main__":
     # Create model
     # Weights are automatically downloaded

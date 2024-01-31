@@ -6,16 +6,42 @@ sys.path.insert(0,'./src/FlickrScrape')
 import argparse
 import os
 import time
+import cv2
 
 import Constants
 from Utils import get_flickr_creds
 from flickrapi import FlickrAPI
 from flickr_utils.general import download_uri
 
-SCRAPE_COUNT = 3600
+SCRAPE_COUNT = 10000
 COUNTRIES_SCRAPE_COUNT = 500
 COUNTRIES = []
+MAX_QUALITY = 2500
 
+
+# Return true if reduced
+def reduce_resolution(img_pth):
+    try:
+        img = cv2.imread(img_pth)
+        if img is None:
+            return None
+    except:
+        return None
+    
+    img_rescaled = False
+    
+    if max(img.shape[0], img.shape[1])  > MAX_QUALITY:
+        scale = MAX_QUALITY / max(img.shape[0], img.shape[1])
+        img = cv2.resize(img, (int(scale * img.shape[1]), int(scale * img.shape[0])))
+        img_rescaled = True
+        
+    img_pth_jpg = ".".join(img_pth.split(".")[:-1]) + ".jpg"
+    # Resaves image into a jpg or resive if it was resized
+    if img_rescaled or img_pth_jpg != img_pth:
+        cv2.imwrite(img_pth_jpg, img)
+
+    return img_rescaled
+    
 def flickr_scrape(search="city portrait", n=10, raw_dir=os.path.join(Constants.RAW_BODY_IMAGES_DIR, "test"), clean_queue=None):
     # Gets the flickr creds
     key, secret = get_flickr_creds()
@@ -29,6 +55,7 @@ def flickr_scrape(search="city portrait", n=10, raw_dir=os.path.join(Constants.R
     while amount < n:
         # Catches empty walks
         if last_amount == amount:
+            print(F"NO MORE RESULTS FOR {search}")
             break
         last_amount = amount
         
@@ -43,14 +70,14 @@ def flickr_scrape(search="city portrait", n=10, raw_dir=os.path.join(Constants.R
 
     
         if not os.path.exists(raw_dir):
-            os.makedirs(raw_dir)
-
-        # print(photos.get("url_o"))
-
+            os.makedirs(raw_dir)        
+        
         for photo in photos:
             if amount > n:
                 break
+            
             start_time = time.time()
+            
             try:
                 # construct url https://www.flickr.com/services/api/misc.urls.html
                 url = photo.get("url_o")  # original size
@@ -59,6 +86,12 @@ def flickr_scrape(search="city portrait", n=10, raw_dir=os.path.join(Constants.R
 
                 try:
                     img_pth = download_uri(url, raw_dir)
+                    rescaled = reduce_resolution(img_pth)
+                    # remove images that weren't loadable
+                    if rescaled is None:
+                        os.remove(img_pth)
+                        img_pth = None
+                    
                 except:
                     img_pth = None
                     print("Error when attempting to download image")
@@ -67,21 +100,22 @@ def flickr_scrape(search="city portrait", n=10, raw_dir=os.path.join(Constants.R
                     clean_queue.put(img_pth)
                     print(f"Saved an {search} image {amount}")
                     
-                
+                remaining_time = 1.0 - (time.time()- start_time)
+                if remaining_time > 0:
+                    time.sleep(remaining_time)
             except:
                 print("%g/%g error..." % (amount, n))
             
             amount += 1
             
-            remaining_time = 1 - (time.time()- start_time)
-            if remaining_time > 0:
-                time.sleep(remaining_time)
+        
             
             
     print("Done. (%.1fs)" % (time.time() - t) + ("\nAll images saved to %s" % raw_dir))
 
 
 def is_country(query):
+    
     country = " ".join(query.split(" ")[:-1])
     return country in COUNTRIES
 
@@ -110,7 +144,7 @@ def body_scrape(query_list : list[str], clean_queue=None, lock=None):
         flickr_scrape(search=query, n=n, clean_queue=clean_queue, raw_dir=outpit_dir)
         
         if lock is None:
-                continue 
+            continue 
         # Records that it finished scraping
         with lock:
             with open(Constants.FINIHSED_BODY_RAW_TXT, 'a') as raw_finished_file:

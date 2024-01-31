@@ -189,7 +189,7 @@ def launch():
             scrape_processes_count = Constants.BODY_SCRAPE_PROCESSES
             clean_processes_count = Constants.BODY_CLEAN_PROCESSES
         
-        """ 
+        
         for i in range(scrape_processes_count):
             # Scapes and downloads
             scrape_process = Process(target=scrape_func, args=(splits[i], clean_queue, scrape_done_lock))
@@ -202,7 +202,7 @@ def launch():
             clean_process = Process(target=Preprocess, args=(clean_queue, accept_queue, root_clean_dir, root_raw_dir, mode))
             clean_process.start()
             clean_processes.append(clean_process)
-        
+        """ 
             
 
     if chosen == 1 or chosen == 3:
