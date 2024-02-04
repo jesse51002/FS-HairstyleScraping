@@ -1,6 +1,8 @@
 import os
 
 import boto3
+from boto3.s3.transfer import TransferConfig
+import shutil
 
 import sys
 sys.path.insert(0,'./src')
@@ -28,8 +30,30 @@ def create_aws_folder(folder_rel_path):
         s3resource.put_object(Bucket=BUCKET_NAME, Key=key)
         print(folder_rel_path, "was created")
 
-def upload_aws_folder(abs_folder_path, rel_folder_path):
-    create_aws_folder(rel_folder_path)
+def upload_aws_folder(abs_folder_path, rel_path):
+    config = TransferConfig(multipart_threshold=1024*25, max_concurrency=10,
+                        multipart_chunksize=1024*25, use_threads=True)
+    
+    abs_folder_path = abs_folder_path.replace("\\", "/")
+    rel_path = rel_path.replace("\\", "/")
+    
+    zip_output_location = abs_folder_path + ".zip"
+    
+    print(f"making zip for {rel_path}")
+    shutil.make_archive(abs_folder_path, 'zip', abs_folder_path)
+    print(f"finished zipping for {rel_path}")
+    
+    print(f"uploading {rel_path}.zip")
+    s3resource.upload_file(zip_output_location, BUCKET_NAME, rel_path + ".zip",
+    ExtraArgs={ 'ACL': 'public-read', 'ContentType': 'video/mp4'},
+    Config = config,
+    )
+    print(f"Finished uploading {rel_path}.zip")
+    
+    
+    print(f"Deleting {rel_path} from local")
+    os.remove(zip_output_location)
+    """
     for i, img_file in enumerate(os.listdir(abs_folder_path)):
         #__s3file = os.path.normpath(dest_path + '/' + file)
         local_file = os.path.join(abs_folder_path, img_file)
@@ -38,14 +62,8 @@ def upload_aws_folder(abs_folder_path, rel_folder_path):
             
         s3resource.upload_file(local_file, BUCKET_NAME, rel_file)
         print(f"Uploaded {rel_folder_path}: image {i}")
+    """
 
-
-def update_upload_file(finished_file, finished_query = None):
-    if finished_query is not None:
-        with open(finished_file, 'a') as raw_finished_file:
-            raw_finished_file.write(f'\n{finished_query}')
-        
-    s3resource.upload_file(finished_file, BUCKET_NAME, os.path.basename(finished_file))
 
 
 def get_upload_folders(split_dir, finished_file=None, completed_scrape_file=None):
@@ -111,9 +129,6 @@ def upload_to_aws(split_dir, finished_file=None, completed_scrape_file=None):
             continue
         
         upload_aws_folder(abs_folder_path, rel_folder_path)
-        
-        if finished_file is not None:
-            update_upload_file(finished_file, query_folder)
                 
             
         

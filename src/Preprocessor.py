@@ -320,7 +320,7 @@ def Preprocess(clean_queue, accept_queue,
             for final_pth in final_pths:
                 accept_queue.put(final_pth)
 
-
+"""
 def PreprocessBodyFolder():
     # Create model
     # Weights are automatically downloaded
@@ -374,7 +374,7 @@ def PreprocessBodyFolder():
         # Appends to the finished clean list
         with open(Constants.FINIHSED_BODY_CLEAN_TXT, 'a') as clean_finished_file:
             clean_finished_file.write(f'\n{query_folder}')
-            
+"""        
   
 if __name__ == "__main__":
     # Create model
