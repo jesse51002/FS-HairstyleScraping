@@ -246,7 +246,7 @@ def clean_raw_image(raw_img,
         
     # If image was not accepted continue
     if cleaned_imgs is None or directions is None:
-       return None
+       return []
     
     cleaned_pths = []
     
@@ -318,63 +318,7 @@ def Preprocess(clean_queue, accept_queue,
         # Adds to the queue for acceptance
         if accept_queue is not None:
             for final_pth in final_pths:
-                accept_queue.put(final_pth)
-
-"""
-def PreprocessBodyFolder():
-    # Create model
-    # Weights are automatically downloaded
-    model = SixDRepNet()
-    
-    detect_model = detection_model()
-    
-    body_parser = body_model()
-    
-    # Instantitates finihsed clean txt
-    if not os.path.isfile(Constants.FINIHSED_BODY_CLEAN_TXT):
-        file = open(Constants.FINIHSED_BODY_CLEAN_TXT, 'w')
-        file.close()       
-        
-    already_cleaned = []
-    # Instanties then countries constant
-    with open(Constants.FINIHSED_BODY_CLEAN_TXT,'r') as file:
-        for x in file.readlines():
-            line = x.strip()
-            already_cleaned.append(line)
-    
-    raw_dirs = os.listdir(Constants.RAW_BODY_IMAGES_DIR)
-    
-    # remvoes already cleaned images
-    for cleaned_dir in already_cleaned:
-        if cleaned_dir in raw_dirs:
-            raw_dirs.remove(cleaned_dir)
-            
-    for query_folder in raw_dirs:
-        folder_pth = os.path.join(Constants.RAW_BODY_IMAGES_DIR, query_folder)
-        for img_name in os.listdir(folder_pth):
-            # End early if wants to exit
-            if getStop():
-                return
-            
-            # Gets image and cleans it
-            raw_img = os.path.join(folder_pth, img_name)
-            if not os.path.isfile(raw_img):
-                continue
-            
-            clean_raw_image(
-                raw_img, 
-                Constants.CLEAN_BODY_IMAGES_DIR, 
-                Constants.RAW_BODY_IMAGES_DIR, 
-                mode="body",
-                model=model,
-                detect_model=detect_model,
-                body_parser=body_parser
-            )
-            
-        # Appends to the finished clean list
-        with open(Constants.FINIHSED_BODY_CLEAN_TXT, 'a') as clean_finished_file:
-            clean_finished_file.write(f'\n{query_folder}')
-"""        
+                accept_queue.put(final_pth)    
   
 if __name__ == "__main__":
     # Create model
