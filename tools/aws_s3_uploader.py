@@ -114,9 +114,9 @@ def get_upload_folders(split_dir, finished_file=None, completed_scrape_file=None
     return upload_folders
             
                 
-def upload_to_aws(split_dir, finished_file=None, completed_scrape_file=None):
+def upload_to_aws(split_dir, finished_upload_file=None, completed_scrape_file=None):
     
-    upload_folders = get_upload_folders(split_dir, finished_file, completed_scrape_file)
+    upload_folders = get_upload_folders(split_dir, finished_upload_file, completed_scrape_file)
     
     rel_base = split_dir.split("/")[-1]
     create_aws_folder(rel_base)
@@ -129,10 +129,14 @@ def upload_to_aws(split_dir, finished_file=None, completed_scrape_file=None):
             continue
         
         upload_aws_folder(abs_folder_path, rel_folder_path)
+        
+        if finished_upload_file is not None:
+            with open(finished_upload_file, 'a') as finished_file:
+                finished_file.write(f'\n{query_folder}')
                 
             
         
 
 
 if __name__ == "__main__":
-    upload_to_aws(Constants.RAW_BODY_IMAGES_DIR, finished_file=Constants.FINIHSED_BODY_RAW_UPLOAD, completed_scrape_file=Constants.FINIHSED_BODY_RAW_TXT)
+    upload_to_aws(Constants.RAW_BODY_IMAGES_DIR, finished_upload_file=Constants.FINIHSED_BODY_RAW_UPLOAD, completed_scrape_file=Constants.FINIHSED_BODY_RAW_TXT)
