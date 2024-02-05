@@ -1,11 +1,21 @@
 import json
 import os
-import msvcrt
+
+
+try:
+    from getch import getch     # Linux
+    def kbhit():
+        return False
+except ImportError:
+    from msvcrt import getch, kbhit  
+    
 import cv2
 from multiprocessing import Process, Queue, Lock
 import matplotlib.pyplot as plt
 import time
 import numpy as np
+import torch
+
 
 from Preprocessor import Preprocess
 from Utils import setStopFile, getStop, find_images, \
@@ -49,8 +59,8 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
             plt.imshow(np.zeros((500,500)))
             plt.xlabel(f"Waiting for cleaned image... H to stop")
             
-            if msvcrt.kbhit():
-                key = msvcrt.getch().decode("utf-8")
+            if kbhit():
+                key = getch().decode("utf-8")
                 if key == "H" or key == "h":
                     setStopFile(True)
                     break
@@ -78,8 +88,8 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
             plt.pause(0.05)
             
             key = None
-            if msvcrt.kbhit():
-                key = msvcrt.getch().decode("utf-8")
+            if kbhit():
+                key = getch().decode("utf-8")
             else:
                 continue
             
@@ -102,8 +112,8 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
                 print("Invalid Key, Input valid key")
             
             # Clears key presses
-            while msvcrt.kbhit():
-                key = msvcrt.getch()
+            while kbhit():
+                key = getch()
             
             
     print("Ending accepting GUI")
@@ -112,6 +122,8 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
 
 # Starts the application
 def launch():  
+    torch.multiprocessing.set_start_method('spawn')
+    
     # makes important directories
     Constants.make_dirs()
     
@@ -145,11 +157,13 @@ def launch():
           Choose mode
             1. Scrape, Clean and Accept
             2. Only Scrape and Clean
-            3. Only Accept
+            3. Only Scrape
+            4. Only Clean
+            5. Only Accept
           """)
     
     chosen = int(input())
-    while chosen < 1 or chosen > 3:
+    while chosen < 1 or chosen > 5:
         print(f"{chosen} is an invalid choice, pick a valid choice")
         chosen = int(input())
     
@@ -170,9 +184,11 @@ def launch():
         accept_queue.put(img)
     print(f"Instantiates accept queue with {len(clean_images)} clean images")
     
-    scrape_done_lock = Lock()           
+    scrape_done_lock = Lock()       
+
     
-    if chosen == 1 or chosen == 2:
+    
+    if chosen <= 4:
         splits = None
         scrape_func = None
         scrape_processes_count = 1
@@ -188,26 +204,29 @@ def launch():
             scrape_func = body_scrape
             scrape_processes_count = Constants.BODY_SCRAPE_PROCESSES
             clean_processes_count = Constants.BODY_CLEAN_PROCESSES
-        
-        
-        for i in range(scrape_processes_count):
-            # Scapes and downloads
-            scrape_process = Process(target=scrape_func, args=(splits[i], clean_queue, scrape_done_lock))
-            scrape_process.start()
-            scrape_processes.append(scrape_process)
-        """
-        
-        for _ in range(clean_processes_count):
-            # preprocesses
-            clean_process = Process(target=Preprocess, args=(clean_queue, accept_queue, root_clean_dir, root_raw_dir, mode))
-            clean_process.start()
-            clean_processes.append(clean_process)
-        """ 
+
+
+        should_scrape = chosen <= 2 or chosen == 3
+        should_clean = chosen <= 2 or chosen == 4
+
+        if should_scrape:
+            for i in range(scrape_processes_count):
+                # Scapes and downloads
+                scrape_process = Process(target=scrape_func, args=(splits[i], clean_queue, scrape_done_lock))
+                scrape_process.start()
+                scrape_processes.append(scrape_process)
+
+        if should_clean:
+            for _ in range(clean_processes_count):
+                # preprocesses
+                clean_process = Process(target=Preprocess, args=(clean_queue, accept_queue, root_clean_dir, root_raw_dir, mode))
+                clean_process.start()
+                clean_processes.append(clean_process) 
             
 
-    if chosen == 1 or chosen == 3:
+    if chosen == 1 or chosen == 5:
         parse_style(accept_queue, root_clean_dir, root_accepted_dir, clean_processes)
-    elif chosen == 2:
+    elif chosen >= 2 and chosen <= 4:
         while True:
             scraping = False
             # Checks if still scraping
@@ -227,8 +246,8 @@ def launch():
                 break
             
             print("'H' TO STOP THE SCAPING/CLEANING")
-            if msvcrt.kbhit():
-                key = msvcrt.getch().decode("utf-8")
+            if kbhit():
+                key = getch().decode("utf-8")
                 if key == "H" or key == "h":
                     # Sets stop to True
                     setStopFile(True)
