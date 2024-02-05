@@ -124,7 +124,7 @@ def upload_to_aws(split_dir, finished_upload_file=None, completed_scrape_file=No
     for query_folder in upload_folders:
         rel_folder_path = os.path.join(rel_base, query_folder)
         abs_folder_path = os.path.join(split_dir, query_folder)
-        
+            
         if not os.path.isdir(abs_folder_path):
             continue
         
