@@ -22,9 +22,11 @@ ACCEPTED_BODY_IMAGES_DIR = "./data/accepted_images"
 
 FINIHSED_BODY_RAW_TXT = "./data/finished_raw"
 FINIHSED_BODY_RAW_UPLOAD = "./data/finished_raw_aws_upload"
+FINIHSED_BODY_RAW_DOWNLOAD = "./data/finished_raw_aws_download"
 
 FINIHSED_BODY_CLEAN_TXT = "./data/finished_clean"
 FINIHSED_BODY_CLEAN_UPLOAD = "./data/finished_clean_aws_upload"
+FINIHSED_BODY_CLEAN_DOWNLOAD = "./data/finished_clean_aws_download"
 
 FLICKR_CREDS_FILE = "./flickr_creds"
 
