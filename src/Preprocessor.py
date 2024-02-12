@@ -129,13 +129,13 @@ def crop_image(img, detect_model :detection_model, res_check=True, visualize=Fal
             continue
             
         
-        boundedimage = img[
+        bounded_image = img[
             max(0, b): min(img.shape[0], t),
             max(0, l): min(img.shape[1], r)
             ]
         
-        boundedimage = cv2.copyMakeBorder(
-            boundedimage, 
+        bounded_image = cv2.copyMakeBorder(
+            bounded_image, 
             b_bounds, # bottom
             t_bounds, #top
             l_bounds,  # left
@@ -148,21 +148,18 @@ def crop_image(img, detect_model :detection_model, res_check=True, visualize=Fal
         if visualize:
             # Draw bounding boxes
             face_start_x, face_start_y  = (int(face_center_x - w /2), int(face_center_y - h /2))
-            cv2.rectangle(boundedimage, (face_start_x, face_start_y), (face_start_x + w, face_start_y + h), (255, 0, 0), 2)
-            
-            print("Face Top percentage:", (face_start_y) / (directoinal_scale["bottom"]  + directoinal_scale["top"]))
-            print("Face Width percentage:", (face_start_x) / (directoinal_scale["bottom"]  + directoinal_scale["top"]))
-            print("Bounded Shape:", boundedimage.shape)
+            cv2.rectangle(bounded_image, (face_start_x, face_start_y), (face_start_x + w, face_start_y + h), (255, 0, 0), 2)
+           
             
         
         # Cropped Image for angle detection
         angle_size = int(ANGLE_FACE_MULT * max_size)
-        angle_image = boundedimage[
+        angle_image = bounded_image[
             face_center_y - angle_size : face_center_y + angle_size,
             face_center_x - angle_size : face_center_x + angle_size
             ].copy()
         
-        bounded_images.append(boundedimage)
+        bounded_images.append(bounded_image)
         angle_images.append(angle_image)
     
     if len(bounded_images) == 0:
