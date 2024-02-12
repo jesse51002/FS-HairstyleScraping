@@ -1,6 +1,7 @@
 import os
 import cv2
 import time
+import math
 from Utils import getStop, get_file_path
 from sixdrepnet import SixDRepNet
 import matplotlib.pyplot as plt
@@ -28,6 +29,44 @@ ALLOWED_ANGLES = {
     "front": np.array([[0, 13], [0, 13], [0, 13]]),
     "side": np.array([[0, 35], [25, 90], [0, 35]])
     }
+
+# This will line up the top of the head to the same place on all images
+# This will help with hairstyle alignment
+# It will also TRY to match the width of all the faces
+def get_directional_scale(w, h):
+    AVERAGE_H_TO_W = 1.385
+    MAX_RATIO = 1.5
+    
+    ratio = h / w
+
+    # Makes sure     the box doesnt get to thin, so does calcuations on a thicker box
+    if ratio >= MAX_RATIO:
+        w = h / MAX_RATIO
+        ratio = MAX_RATIO
+
+    # Gets target size
+    target_size = int(SIZE_FACE_MULT * AVERAGE_H_TO_W * w)
+    # makes it divisible by 2
+    target_size += target_size % 2
+
+    
+    average_ratio_h = w * AVERAGE_H_TO_W
+    # Face top will be aligned to this position
+    average_ratio_y0 = int((target_size - average_ratio_h) / 2)
+
+    # Align face to the right position
+    bottom_extend = average_ratio_y0 + math.ceil(h / 2)
+    top_extend = target_size - (average_ratio_y0 + math.ceil(h / 2))
+    
+    # Craete results dictionary
+    results = {
+        "bottom": bottom_extend,
+        "top": top_extend,
+        "left": int(target_size / 2),
+        "right": int(target_size / 2)
+    }
+
+    return results
 
 
 def crop_image(img, detect_model :detection_model, res_check=True, visualize=False, bottom_extend=False, max_faces=None):
@@ -61,11 +100,13 @@ def crop_image(img, detect_model :detection_model, res_check=True, visualize=Fal
             print("Resolution: ", max_size * SIZE_FACE_MULT * 2)
             print("Face Resolution: ", max_size * 2)
         
+        directoinal_scale = get_directional_scale(w, h)
+        
         bounds =  (
-            int(mid_x - max_size * SIZE_FACE_MULT), # Bottom
-            int(mid_x + max_size * SIZE_FACE_MULT), # top
-            int(mid_y - max_size * SIZE_FACE_MULT), # left
-            int(mid_y + max_size * SIZE_FACE_MULT) # right
+            mid_x - directoinal_scale["left"], # left
+            mid_x + directoinal_scale["right"], # right
+            mid_y - directoinal_scale["bottom"], # bottom 
+            mid_y + directoinal_scale["top"] # top
         )
         
         """
@@ -74,45 +115,53 @@ def crop_image(img, detect_model :detection_model, res_check=True, visualize=Fal
         print("Size:", max_size * SIZE_FACE_MULT)
         """
         
-        b,t,l,r = bounds 
+        l, r, b, t = bounds 
         
-        b_bounds, t_bounds, l_bounds, r_bounds = (
-            max(0,-1*b),
-            max(0,t - img.shape[1]),
+        l_bounds, r_bounds, b_bounds, t_bounds = (
             max(0,-1*l), 
-            max(0,r - img.shape[0])
+            max(0,r - img.shape[1]),
+            max(0,-1*b),
+            max(0,t - img.shape[0]),
             )
         
-        if bottom_extend and r_bounds > 0:
+        if bottom_extend and t_bounds > 0:
             print("Bottom doesnt reach... Rejected")
             continue
             
         
         boundedimage = img[
-            max(0, l): min(img.shape[0], r),
-            max(0, b): min(img.shape[1], t)
+            max(0, b): min(img.shape[0], t),
+            max(0, l): min(img.shape[1], r)
             ]
         
         boundedimage = cv2.copyMakeBorder(
             boundedimage, 
-            l_bounds,  # left
-            r_bounds, # right
             b_bounds, # bottom
             t_bounds, #top
+            l_bounds,  # left
+            r_bounds, # right
             cv2.BORDER_CONSTANT #borderType
             )
         
         
-        # Cropped Image for angle detection
-        angle_size = int(ANGLE_FACE_MULT * max_size)
-        angle_center = int(max_size * SIZE_FACE_MULT)
-        angle_image = boundedimage[angle_center -angle_size:angle_center + angle_size, angle_center -angle_size:angle_center + angle_size].copy()
-        
+        face_center_x, face_center_y = directoinal_scale["left"], directoinal_scale["bottom"]
         if visualize:
             # Draw bounding boxes
-            face_start_x, face_start_y  = (int(angle_center - w /2), int(angle_center - h /2))
+            face_start_x, face_start_y  = (int(face_center_x - w /2), int(face_center_y - h /2))
             cv2.rectangle(boundedimage, (face_start_x, face_start_y), (face_start_x + w, face_start_y + h), (255, 0, 0), 2)
             
+            print("Face Top percentage:", (face_start_y) / (directoinal_scale["bottom"]  + directoinal_scale["top"]))
+            print("Face Width percentage:", (face_start_x) / (directoinal_scale["bottom"]  + directoinal_scale["top"]))
+            print("Bounded Shape:", boundedimage.shape)
+            
+        
+        # Cropped Image for angle detection
+        angle_size = int(ANGLE_FACE_MULT * max_size)
+        angle_image = boundedimage[
+            face_center_y - angle_size : face_center_y + angle_size,
+            face_center_x - angle_size : face_center_x + angle_size
+            ].copy()
+        
         bounded_images.append(boundedimage)
         angle_images.append(angle_image)
     
@@ -329,7 +378,12 @@ if __name__ == "__main__":
     
     detect_model = detection_model()
     
-    # clean_img("images/raw_images/straight long bob hairstyle/side/straightlongbobhairstylesideprofile16.jpeg", visualize=True, res_check=False, angle_check=False)
+    test_dir = "data/raw_images/street fashion portrait"
+    for img_name in os.listdir(test_dir):
+        img_pth = os.path.join(test_dir, img_name)
+        clean_img(model, img_pth, detect_model=detect_model, visualize=True, res_check=True, bottom_extend=True)
+    
+    exit()
     
     body_data_test = "data/raw_images/test/"
     
