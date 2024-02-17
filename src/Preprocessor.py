@@ -210,6 +210,13 @@ def clean_img(model, path, detect_model: detection_model,
             print("Body width is not contained in the image... Rejected")
             return None, None 
         
+        bottom_test = segmentation[:5]
+        
+        invlaid_idxs = np.where(bottom_test != 0)
+        if invlaid_idxs[0].shape[0] > 0:
+            print("Body top is not contained in the image... Rejected")
+            return None, None 
+        
     
     imgs, angle_images = crop_image(raw_img, detect_model, visualize=visualize, res_check=res_check, bottom_extend=bottom_extend, max_faces=max_faces)
     # If image isn't valid then return 
