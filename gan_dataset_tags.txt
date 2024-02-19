@@ -39,3 +39,11 @@ european
 south asian
 east asian
 african
+canon
+nikon
+fuji
+fujifilm
+sony
+Panasonic
+Olympus
+Pentax
