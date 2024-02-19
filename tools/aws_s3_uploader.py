@@ -139,4 +139,4 @@ def upload_to_aws(split_dir, finished_upload_file=None, completed_scrape_file=No
 
 
 if __name__ == "__main__":
-    upload_to_aws(Constants.RAW_BODY_IMAGES_DIR, finished_upload_file=Constants.FINIHSED_BODY_RAW_UPLOAD, completed_scrape_file=Constants.FINIHSED_BODY_RAW_TXT)
+    upload_to_aws(Constants.CLEAN_BODY_IMAGES_DIR, finished_upload_file=Constants.FINIHSED_BODY_CLEAN_UPLOAD)
