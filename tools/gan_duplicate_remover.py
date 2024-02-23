@@ -6,17 +6,24 @@ sys.path.insert(0,'./src')
 import Constants
 
 hashes = set()
+names = set()
 
 num = 0
 removed = 0
 
 for root, dirs, files in os.walk(Constants.CLEAN_BODY_IMAGES_DIR):
-    print()
-    for filename in files:
+    for filename in files: 
         path = os.path.join(root, filename)
+
+        if ".ipynb_checkpoints" in path:
+            continue
+
+        name = os.path.basename(filename.split(".")[0])
+        
         digest = hashlib.sha1(open(path,'rb').read()).digest()
-        if digest not in hashes:
+        if digest not in hashes and name not in names:
             hashes.add(digest)
+            names.add(name)
         else:
             print("Removing", path)
             os.remove(path)
