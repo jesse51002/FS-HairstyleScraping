@@ -9,6 +9,7 @@ import numpy as np
 
 from HumanParsing.segment import body_model
 from Detection import detection_model
+from Clip import Clip
 import Constants
 
 SIZE_FACE_MULT = 3.5
@@ -39,7 +40,7 @@ def get_directional_scale(w, h):
     
     ratio = h / w
 
-    # Makes sure     the box doesnt get to thin, so does calcuations on a thicker box
+    # Makes sure the box doesnt get to thin, so does calcuations on a thicker box
     if ratio >= MAX_RATIO:
         w = h / MAX_RATIO
         ratio = MAX_RATIO
@@ -168,16 +169,22 @@ def crop_image(img, detect_model :detection_model, res_check=True, visualize=Fal
     return bounded_images, angle_images
         
 
+def clip_cleaner(img, clip_model):
+    probs_dic = clip_model.inference(img)
+    keep_image = probs_dic["Quality"][0, 0] >= 0.5 and probs_dic["Human"][0, 0] >= 0.5
+    return keep_image, probs_dic
+
 def clean_img(model, path, detect_model: detection_model,
-              visualize=False, # printing and displayingh with matplotlib
-              body_parser: body_model=None, # Body segmentation mode
-              res_check=False, # Only accepts a minimum resolution
-              save_path=None, # Save path
-              bottom_extend=False, # Image must reach the bottom when cropped
-              max_faces=None, # Max faces in an image
-              body_width_contain=True, # Whole body width must be contained inside the image bounds
-              reject_greyscale=True, # Rejects greyscale images
-              downscale_big=True, # Downscales Images that are to big
+              visualize=False,  # printing and displayingh with matplotlib
+              body_parser: body_model=None,  # Body segmentation mode
+              clip_model=None,  # Clip model
+              res_check=False,  # Only accepts a minimum resolution
+              save_path=None,  # Save path
+              bottom_extend=False,  # Image must reach the bottom when cropped
+              max_faces=None,  # Max faces in an image
+              body_width_contain=True,  # Whole body width must be contained inside the image bounds
+              reject_greyscale=True,  # Rejects greyscale images
+              downscale_big=True,  # Downscales Images that are to big
               ):
     
     try:
@@ -215,11 +222,16 @@ def clean_img(model, path, detect_model: detection_model,
         invlaid_idxs = np.where(bottom_test != 0)
         if invlaid_idxs[0].shape[0] > 0:
             print("Body top is not contained in the image... Rejected")
-            return None, None 
-        
+            return None, None
+
+    if clip_model is not None:
+        keep_image, _ = clip_cleaner(raw_img, clip_model)
+
+        if not keep_image:
+            return None, None
     
     imgs, angle_images = crop_image(raw_img, detect_model, visualize=visualize, res_check=res_check, bottom_extend=bottom_extend, max_faces=max_faces)
-    # If image isn't valid then return 
+    # If image isn't valid then return
     if imgs is None:
         return None, None
     
@@ -250,9 +262,9 @@ def clean_img(model, path, detect_model: detection_model,
         
         if downscale_big:
             if img.shape[0] > MAX_QUALITY:
-                img = cv2.resize(img, (MAX_QUALITY,MAX_QUALITY))
+                img = cv2.resize(img, (MAX_QUALITY, MAX_QUALITY))
         
-        # Visualize  
+        # Visualize
         if visualize:
             model.draw_axis(img, yaw, pitch, roll)
             model.draw_axis(angle_image, yaw, pitch, roll)
@@ -268,8 +280,6 @@ def clean_img(model, path, detect_model: detection_model,
         imgs_final.append(img)
         directions.append(valid_direction)
         
-        
-    
     return imgs_final, directions
 
 
@@ -280,7 +290,8 @@ def clean_raw_image(raw_img,
                     delete_raw=True,
                     model:SixDRepNet=None,
                     detect_model:detection_model=None,
-                    body_parser: body_model=None
+                    body_parser: body_model=None,
+                    clip_model=None,
                     ):
     
     if detect_model is None:
@@ -289,17 +300,21 @@ def clean_raw_image(raw_img,
     if mode == "hair":
         cleaned_imgs, directions = clean_img(model, raw_img, detect_model=detect_model, res_check=True)
     elif mode == "body":
-        cleaned_imgs, directions = clean_img(model, raw_img, detect_model=detect_model, body_parser=body_parser, res_check=True, bottom_extend=True)
+        cleaned_imgs, directions = clean_img(
+            model, raw_img, 
+            detect_model=detect_model, 
+            body_parser=body_parser, 
+            clip_model=clip_model,
+            res_check=True, 
+            bottom_extend=True)
 
-        
-    # Removes the raw img after it is cleaned    
+    # Removes the raw img after it is cleaned
     if delete_raw:   
         os.remove(raw_img)
-        
-        
+                
     # If image was not accepted continue
     if cleaned_imgs is None or directions is None:
-       return []
+        return []
     
     cleaned_pths = []
     
@@ -347,8 +362,12 @@ def Preprocess(clean_queue, accept_queue,
     
     if mode == "body":
         body_parser = body_model()
+        
+        clip_model = Clip()
+
     else:
         body_parser = None
+        clip_model = None
     
     # Loop until errors out from timeout (nothing more to clean)
     while True:
@@ -365,7 +384,8 @@ def Preprocess(clean_queue, accept_queue,
             raw_img, root_clean_dir, root_raw_dir, mode=mode,
             model=model,
             detect_model=detect_model,
-            body_parser=body_parser
+            body_parser=body_parser,
+            clip_model=clip_model
             )
         
         # Adds to the queue for acceptance
@@ -381,18 +401,67 @@ if __name__ == "__main__":
     body_parser = body_model()
     
     detect_model = detection_model()
+
+    clip_model = Clip()
+
+    test_dir = "data/clean_images/dreads portrait"
+    names = os.listdir(test_dir)
+    names.sort()
+
+    amount = 0
     
+    for img_name in names:
+        img_pth = os.path.join(test_dir, img_name)
+        if not os.path.isfile(img_pth):
+            continue
+
+        img = cv2.imread(img_pth)
+
+        x0, y0, x1, y1 = 0, 0, img.shape[1], img.shape[0]
+
+        x_line = np.zeros((img.shape[0], 3))
+        y_line = np.zeros((img.shape[1], 3))
+        
+        for y in range(0, img.shape[0]):
+            if np.array_equal(img[y, :], y_line):
+                y0 = y
+            else:
+                break
+
+        for y in range(img.shape[0] - 1, y0, -1):
+            if np.array_equal(img[y, :], y_line):
+                y1 = y
+            else:
+                break
+        for x in range(0, img.shape[1]):
+            if np.array_equal(img[:, x], x_line):
+                x0 = x
+            else:
+                break
+
+        for x in range(img.shape[1] - 1, x0, -1):
+            if np.array_equal(img[:, x], x_line):
+                x1 = x
+            else:
+                break
+
+        keep_image, probs_dic = clip_cleaner(img[y0:y1, x0:x1], clip_model)
+
+        print(img_pth)
+        print("Quality:", probs_dic["Quality"], "\nHuman:", probs_dic["Human"], "\n")
+        amount += 1
+            
+        if amount > 20:
+            break
+    
+    exit()
+    
+    """
     test_dir = "data/raw_images/street fashion portrait"
     for img_name in os.listdir(test_dir):
         img_pth = os.path.join(test_dir, img_name)
         clean_img(model, img_pth, detect_model=detect_model, visualize=True, res_check=True, bottom_extend=True)
-    
-    exit()
-    
-    body_data_test = "data/raw_images/test/"
-    
-    for img in os.listdir(body_data_test):
-        clean_img(model, os.path.join(body_data_test, img), detect_model=detect_model, body_parser=body_parser, visualize=True, res_check=True, bottom_extend=True)
+    """
     
     
     
