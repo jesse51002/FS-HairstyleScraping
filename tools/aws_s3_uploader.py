@@ -51,7 +51,7 @@ def upload_aws_folder(abs_folder_path, rel_path):
     print(f"Finished uploading {rel_path}.zip")
     
     
-    print(f"Deleting {rel_path} from local")
+    print(f"Deleting {rel_path} from local\n\n")
     os.remove(zip_output_location)
     """
     for i, img_file in enumerate(os.listdir(abs_folder_path)):
