@@ -18,7 +18,7 @@ s3resource = boto3.client('s3')
 
 BUCKET_NAME = "fs-upper-body-gan-dataset"
 
-MAX_FOLDER_COUNT_DOWNLOAD = 10
+MAX_FOLDER_COUNT_DOWNLOAD = 10000000
 
 def zip_parser(abs_folder_path, zip_file, finished_download_file=None, file_lock=None):
     if not os.path.isdir(abs_folder_path):
@@ -120,4 +120,4 @@ def download_from_aws(split_dir, completed_download_file=None):
     
 
 if __name__ == "__main__":
-    download_from_aws(Constants.RAW_BODY_IMAGES_DIR, completed_download_file=Constants.FINIHSED_BODY_RAW_DOWNLOAD)
+    download_from_aws(Constants.CLEAN_BODY_IMAGES_DIR, completed_download_file=Constants.FINIHSED_BODY_CLEAN_DOWNLOAD)

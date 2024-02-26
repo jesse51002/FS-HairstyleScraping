@@ -73,3 +73,10 @@ steps
 casual
 gothic 
 edgy
+urban
+athlete 
+formal
+informal
+fitness
+leisure
+vibrant 

@@ -1,5 +1,8 @@
 import json
 import os
+import tkinter
+from tkinter import *
+from PIL import Image, ImageTk
 
 
 try:
@@ -7,7 +10,7 @@ try:
     def kbhit():
         return False
 except ImportError:
-    from msvcrt import getch, kbhit  
+    from msvcrt import getch, kbhit  # Windows
     
 import cv2
 from multiprocessing import Process, Queue, Lock
@@ -29,18 +32,41 @@ import Constants
 
 # Can either be hair or body
 mode = "hair"
-
+ACCEPT_IMAGE_SIZE = 500
+CLEAN_BACKGROUND_REMOVED = os.path.join(Constants.CLEAN_BODY_IMAGES_DIR)
 
 # Style parser
 # Scapes, cleans and shows cleaned image
 def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : str, clean_processes : list[Process]): 
-    plt.imshow(np.zeros((500,500)))
-    plt.xlabel(f"Starting...")
-    plt.ion()
-    plt.show()
-    plt.pause(0.2)
+    
+    start_time = time.time()
+    
+    accept_count = 0
+    reject_count = 0
+    
+    
+    root = Tk()
+    root.geometry(f"{int(ACCEPT_IMAGE_SIZE * 2)}x{ACCEPT_IMAGE_SIZE + 200}") 
+    
+    def on_closing():
+        setStopFile(True)
+    root.protocol("WM_DELETE_WINDOW", on_closing)
+    
+    # Make the window jump above all
+    root.attributes('-topmost',True)
+    
+    description_label = tkinter.Label(root, text="Starting", font=('Times 20'))
+    description_label.place(x=ACCEPT_IMAGE_SIZE, y=ACCEPT_IMAGE_SIZE, anchor="n", width=ACCEPT_IMAGE_SIZE * 2, height=200)
+    
+    color_image_label = tkinter.Label(root)
+    color_image_label.place(x=0, y=0, anchor="nw", width=ACCEPT_IMAGE_SIZE, height=ACCEPT_IMAGE_SIZE)
+    
+    back_rm_image_label = tkinter.Label(root)
+    back_rm_image_label.place(x=ACCEPT_IMAGE_SIZE, y=0, anchor="nw", width=ACCEPT_IMAGE_SIZE, height=ACCEPT_IMAGE_SIZE)
     
     while not getStop():
+        root.update()
+
         img_pth = None
         if not accept_queue.empty():
             img_pth = accept_queue.get()
@@ -56,8 +82,7 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
             if not clean_active:
                 break
             
-            plt.imshow(np.zeros((500,500)))
-            plt.xlabel(f"Waiting for cleaned image... H to stop")
+            description_label.configure(text=f"Waiting for cleaned image... H to stop") 
             
             if kbhit():
                 key = getch().decode("utf-8")
@@ -65,8 +90,7 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
                     setStopFile(True)
                     break
             
-            plt.pause(0.5)
-            
+            time.sleep(0.05)
             continue
     
         pth_list = get_file_path(img_pth, root_clean_dir[2:])
@@ -76,21 +100,27 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
         if not os.path.isdir(accepted_dir):
             os.makedirs(accepted_dir)
         accepted_pth = os.path.join(accepted_dir, os.path.basename(img_pth))
+                           
+        # print("Displaying the image")
         
-        img = cv2.imread(img_pth)
-                   
-        print("Displaying the image")
-                
-        plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        plt.xlabel(f"{pth_list} ||| 'A' to Accept ::: 'R' to reject ::: 'H' to end")
+        # Create a photoimage object of the image in the path
+        pil_image = Image.open(img_pth).resize((ACCEPT_IMAGE_SIZE, ACCEPT_IMAGE_SIZE),Image.LANCZOS)
         
-        while True:
-            plt.pause(0.05)
+        img = ImageTk.PhotoImage(pil_image)
+        color_image_label.configure(image=img)
+        color_image_label.image = img
             
+        description_label.configure(text=f"{pth_list} ||| 'A' to Accept ::: 'R' to reject ::: 'H' to end")    
+        
+        root.update()
+        
+        while not getStop():
             key = None
             if kbhit():
                 key = getch().decode("utf-8")
             else:
+                root.update()
+                time.sleep(0.05)
                 continue
             
             # Moves file to accepted
@@ -99,10 +129,13 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
                 if os.path.isfile(accepted_pth):
                     os.remove(accepted_pth)
                 os.rename(img_pth, accepted_pth)
+                
+                accept_count += 1
                 break             
             # If rejected delete the image
             elif key == "R" or key == "r":
                 os.remove(img_pth)
+                reject_count += 1
                 break
             # Forcefully ends the application
             elif key == "H" or key == "h":
@@ -114,11 +147,23 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
             # Clears key presses
             while kbhit():
                 key = getch()
+        
+        color_image_label.configure(image=None)
+        color_image_label.image = None
             
-            
+        description_label.configure(text=f"Waiting...")    
+        
+        root.update()
+    
+    root.destroy()   
+
+    total_count = accept_count + reject_count
+    accept_perc = accept_count / total_count * 100
+    time_took_min = (time.time() - start_time) / 60
+    
+    print(f"Went throught {total_count} images and accepted {round(accept_perc, -2)}% in {time_took_min}")
+    
     print("Ending accepting GUI")
-    plt.close()
-    plt.ioff()
 
 # Starts the application
 def launch():  
