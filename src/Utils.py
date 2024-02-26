@@ -23,6 +23,8 @@ def find_images(path: str):
     
     if os.path.isdir(path):
         for sub in os.listdir(path):
+            if ".ipynb_checkpoints" in sub or sub == Constants.BACKGROUND_REMOVED_NAME:
+                continue
             img_list += find_images(os.path.join(path, sub))
     else:
         name = os.path.basename(path)

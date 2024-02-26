@@ -228,6 +228,7 @@ def clean_img(model, path, detect_model: detection_model,
         keep_image, _ = clip_cleaner(raw_img, clip_model)
 
         if not keep_image:
+            print("Clip rejected image... Rejected")
             return None, None
     
     imgs, angle_images = crop_image(raw_img, detect_model, visualize=visualize, res_check=res_check, bottom_extend=bottom_extend, max_faces=max_faces)

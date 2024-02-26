@@ -139,4 +139,29 @@ def upload_to_aws(split_dir, finished_upload_file=None, completed_scrape_file=No
 
 
 if __name__ == "__main__":
-    upload_to_aws(Constants.RAW_BODY_IMAGES_DIR, finished_upload_file=Constants.FINIHSED_BODY_RAW_UPLOAD)
+    print("""
+          Choose upload mode
+            1. Raw
+            2. Clean
+          """)
+    
+    chosen = int(input())
+    while chosen < 1 or chosen > 2:
+        print(f"{chosen} is an invalid choice, pick a valid choice")
+        chosen = int(input())
+
+        if chosen >= 1 or chosen <= 2:
+            print(f"""
+            You have picked option {chosen}, are sure this action is irreversible\n
+            Type 'confirm' to proceed
+            """)
+
+            if input() != "confirm":
+                continue
+            
+    if chosen == 1:
+        upload_to_aws(Constants.RAW_BODY_IMAGES_DIR, finished_upload_file=Constants.FINIHSED_BODY_RAW_UPLOAD)
+    elif chosen == 2:
+        upload_to_aws(Constants.CLEAN_BODY_IMAGES_DIR, finished_upload_file=Constants.FINIHSED_BODY_CLEAN_UPLOAD)
+
+

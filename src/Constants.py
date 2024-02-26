@@ -30,6 +30,9 @@ FINIHSED_BODY_CLEAN_DOWNLOAD = "./data/finished_clean_aws_download"
 
 FLICKR_CREDS_FILE = "./flickr_creds"
 
+
+BACKGROUND_REMOVED_NAME = "0background_free"
+
 # Stop file
 STOP_FILE  = "stop.json"
 
@@ -40,7 +43,7 @@ SCRAPE_ADDS = ["", "front profile", "side profile"]
 HAIR_CLEAN_PROCESSES = 1
 HAIR_SCRAPE_PROCESSES = 12
 
-BODY_CLEAN_PROCESSES = 3
+BODY_CLEAN_PROCESSES = 2
 BODY_SCRAPE_PROCESSES = 1
 
 def make_dirs():
