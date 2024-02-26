@@ -33,7 +33,7 @@ import Constants
 # Can either be hair or body
 mode = "hair"
 ACCEPT_IMAGE_SIZE = 500
-CLEAN_BACKGROUND_REMOVED = os.path.join(Constants.CLEAN_BODY_IMAGES_DIR)
+CLEAN_BACKGROUND_REMOVED_DIR = os.path.join(Constants.CLEAN_BODY_IMAGES_DIR, Constants.BACKGROUND_REMOVED_NAME)
 
 # Style parser
 # Scapes, cleans and shows cleaned image
@@ -109,6 +109,16 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
         img = ImageTk.PhotoImage(pil_image)
         color_image_label.configure(image=img)
         color_image_label.image = img
+        
+        background_image_pth = os.path.join(CLEAN_BACKGROUND_REMOVED_DIR, os.path.basename(img_pth))
+        if os.path.isfile(background_image_pth):
+            back_pil_image = Image.open(background_image_pth).resize((ACCEPT_IMAGE_SIZE, ACCEPT_IMAGE_SIZE),Image.LANCZOS)
+            back_img = ImageTk.PhotoImage(back_pil_image)
+            back_rm_image_label.configure(image=back_img)
+            back_rm_image_label.image = back_img
+        else:
+            back_rm_image_label.configure(image=None)
+            back_rm_image_label.image = None
             
         description_label.configure(text=f"{pth_list} ||| 'A' to Accept ::: 'R' to reject ::: 'H' to end")    
         
