@@ -30,6 +30,9 @@ FINIHSED_BODY_CLEAN_DOWNLOAD = "./data/finished_clean_aws_download"
 
 FLICKR_CREDS_FILE = "./flickr_creds"
 
+
+BACKGROUND_REMOVED_NAME = "0background_free"
+
 # Stop file
 STOP_FILE  = "stop.json"
 

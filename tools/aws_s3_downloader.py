@@ -120,4 +120,28 @@ def download_from_aws(split_dir, completed_download_file=None):
     
 
 if __name__ == "__main__":
-    download_from_aws(Constants.RAW_BODY_IMAGES_DIR, completed_download_file=Constants.FINIHSED_BODY_RAW_DOWNLOAD)
+    print("""
+          Choose upload mode
+            1. Raw
+            2. Clean
+          """)
+    
+    chosen = int(input())
+    while chosen < 1 or chosen > 2:
+        print(f"{chosen} is an invalid choice, pick a valid choice")
+        chosen = int(input())
+
+        if chosen >= 1 or chosen <= 2:
+            print(f"""
+            You have picked option {chosen}, are sure this action is irreversible\n
+            Type 'confirm' to proceed
+            """)
+
+            if input() != "confirm":
+                continue
+
+    if chosen == 1:
+        download_from_aws(Constants.RAW_BODY_IMAGES_DIR, completed_download_file=Constants.FINIHSED_BODY_RAW_DOWNLOAD)
+    elif chosen == 2:
+        download_from_aws(Constants.CLEAN_BODY_IMAGES_DIR, completed_download_file=Constants.FINIHSED_BODY_CLEAN_DOWNLOAD)
+    
