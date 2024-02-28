@@ -32,7 +32,7 @@ import Constants
 
 # Can either be hair or body
 mode = "hair"
-ACCEPT_IMAGE_SIZE = 500
+ACCEPT_IMAGE_SIZE = 750
 CLEAN_BACKGROUND_REMOVED_DIR = os.path.join(Constants.CLEAN_BODY_IMAGES_DIR, Constants.BACKGROUND_REMOVED_NAME)
 
 # Style parser
@@ -94,12 +94,6 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
             continue
     
         pth_list = get_file_path(img_pth, root_clean_dir[2:])
-        
-        # Gets the images save path
-        accepted_dir = os.path.join(root_accepted_dir, pth_list)
-        if not os.path.isdir(accepted_dir):
-            os.makedirs(accepted_dir)
-        accepted_pth = os.path.join(accepted_dir, os.path.basename(img_pth))
                            
         # print("Displaying the image")
         
@@ -117,12 +111,25 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
             back_rm_image_label.configure(image=back_img)
             back_rm_image_label.image = back_img
         else:
+            background_image_pth = None
             back_rm_image_label.configure(image=None)
             back_rm_image_label.image = None
             
         description_label.configure(text=f"{pth_list} ||| 'A' to Accept ::: 'R' to reject ::: 'H' to end")    
         
         root.update()
+        
+        # Gets the images save path
+        accepted_dir = os.path.join(root_accepted_dir, pth_list)
+        if not os.path.isdir(accepted_dir):
+            os.makedirs(accepted_dir)
+        accepted_pth = os.path.join(accepted_dir, os.path.basename(img_pth))
+        
+        # Gets background removed image save path
+        back_rm_acceppt_dir = os.path.join(root_accepted_dir, Constants.BACKGROUND_REMOVED_NAME)
+        if not os.path.isdir(back_rm_acceppt_dir):
+            os.makedirs(back_rm_acceppt_dir)
+        back_rm_accept_pth = os.path.join(back_rm_acceppt_dir, os.path.basename(img_pth))
         
         while not getStop():
             key = None
@@ -140,12 +147,21 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
                     os.remove(accepted_pth)
                 os.rename(img_pth, accepted_pth)
                 
+                if background_image_pth is not None:
+                    if os.path.isfile(back_rm_accept_pth):
+                        os.remove(back_rm_accept_pth)
+                    os.rename(background_image_pth, back_rm_accept_pth)
+                    
                 accept_count += 1
+                print("Accepted a total of", accept_count)
                 break             
             # If rejected delete the image
             elif key == "R" or key == "r":
                 os.remove(img_pth)
+                if background_image_pth is not None:
+                    os.remove(background_image_pth)
                 reject_count += 1
+                print("Rejected a total of", reject_count)
                 break
             # Forcefully ends the application
             elif key == "H" or key == "h":
@@ -168,10 +184,10 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
     root.destroy()   
 
     total_count = accept_count + reject_count
-    accept_perc = accept_count / total_count * 100
-    time_took_min = (time.time() - start_time) / 60
-    
-    print(f"Went throught {total_count} images and accepted {round(accept_perc, -2)}% in {time_took_min}")
+    if total_count > 0:
+        accept_perc = (float(accept_count) / float(total_count)) * 100.0    
+        time_took_min = (time.time() - start_time) / 60
+        print(f"Went throught {total_count} images and accepted {round(accept_perc, 2)}% in {time_took_min}")
     
     print("Ending accepting GUI")
 

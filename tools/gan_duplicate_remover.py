@@ -15,7 +15,7 @@ for root, dirs, files in os.walk(Constants.CLEAN_BODY_IMAGES_DIR):
     for filename in files: 
         path = os.path.join(root, filename)
 
-        if ".ipynb_checkpoints" in path:
+        if ".ipynb_checkpoints" in path or Constants.BACKGROUND_REMOVED_NAME in path:
             continue
 
         name = os.path.basename(filename.split(".")[0])

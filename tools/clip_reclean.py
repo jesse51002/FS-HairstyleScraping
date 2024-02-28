@@ -26,6 +26,9 @@ def main():
             img_pth = os.path.join(root, filename)
             if not os.path.isfile(img_pth):
                 continue
+            
+            if ".ipynb_checkpoints" in img_pth or Constants.BACKGROUND_REMOVED_NAME in img_pth:
+                continue
 
             img = cv2.imread(img_pth)
     
