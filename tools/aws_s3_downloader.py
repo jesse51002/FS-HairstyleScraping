@@ -137,6 +137,7 @@ if __name__ == "__main__":
 
             if input() != "confirm":
                 print(f"'confirm' was typed incorrectly. Restart...")
+                chosen = -1
                 continue
         else:
             print(f"{chosen} is an invalid choice, pick a valid choice")

@@ -30,6 +30,7 @@ while chosen < 1 or chosen > 2:
 
         if input() != "confirm":
             print(f"'confirm' was typed incorrectly. Restart...")
+            chosen = -1
             continue
     else:
         print(f"{chosen} is an invalid choice, pick a valid choice")
