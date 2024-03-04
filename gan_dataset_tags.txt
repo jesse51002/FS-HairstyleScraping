@@ -79,4 +79,38 @@ formal
 informal
 fitness
 leisure
-vibrant 
+vibrant
+protective hair
+dyed hair
+blonde hair
+purple hair
+red hair
+orange hair
+blue hair
+green hair
+modern
+contemporary
+cultural
+youth
+patterned
+lifestyle
+stylish
+architectural
+trendy
+fashionable
+sunlit
+dramatic
+confident
+formalwear
+festival
+artistic
+movement
+minimalistic
+candid
+fashion
+cityscape
+high angle
+low angle
+dynamic
+traditional
+sporty

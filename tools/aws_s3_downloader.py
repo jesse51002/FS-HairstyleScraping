@@ -78,9 +78,8 @@ def get_download_folders(prefix="", completed_download_file=None):
                 line = x.strip()
                 if len(line) == 0:
                     continue
-                finished_download.append(line)
-   
-    
+                finished_download.append(line.replace("\\", "/")[:-4])
+
     i = 0
     while i < len(keys_in_s3):
         key = keys_in_s3[i]
@@ -121,14 +120,13 @@ def download_from_aws(split_dir, completed_download_file=None):
 
 if __name__ == "__main__":
     print("""
-          Choose upload mode
+          Choose download mode
             1. Raw
             2. Clean
           """)
     
-    chosen = int(input())
+    chosen = -1
     while chosen < 1 or chosen > 2:
-        print(f"{chosen} is an invalid choice, pick a valid choice")
         chosen = int(input())
 
         if chosen >= 1 or chosen <= 2:
@@ -138,7 +136,10 @@ if __name__ == "__main__":
             """)
 
             if input() != "confirm":
+                print(f"'confirm' was typed incorrectly. Restart...")
                 continue
+        else:
+            print(f"{chosen} is an invalid choice, pick a valid choice")
 
     if chosen == 1:
         download_from_aws(Constants.RAW_BODY_IMAGES_DIR, completed_download_file=Constants.FINIHSED_BODY_RAW_DOWNLOAD)

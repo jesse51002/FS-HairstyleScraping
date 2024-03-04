@@ -22,9 +22,6 @@ conda create -n WebScraping python=3.12
 
 # activate the environment
 conda activate WebScraping
-
-# install dependencies
-pip install -r requirements.txt
 ```
 
 - Put all the styles that want to be scraped into the `styles.txt` file

@@ -145,9 +145,8 @@ if __name__ == "__main__":
             2. Clean
           """)
     
-    chosen = int(input())
+    chosen = -1
     while chosen < 1 or chosen > 2:
-        print(f"{chosen} is an invalid choice, pick a valid choice")
         chosen = int(input())
 
         if chosen >= 1 or chosen <= 2:
@@ -157,7 +156,10 @@ if __name__ == "__main__":
             """)
 
             if input() != "confirm":
+                print(f"'confirm' was typed incorrectly. Restart...")
                 continue
+        else:
+            print(f"{chosen} is an invalid choice, pick a valid choice")
             
     if chosen == 1:
         upload_to_aws(Constants.RAW_BODY_IMAGES_DIR, finished_upload_file=Constants.FINIHSED_BODY_RAW_UPLOAD)

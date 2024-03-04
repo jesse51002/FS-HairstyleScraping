@@ -86,12 +86,16 @@ def get_lines():
     
 def create_body_queries():
     queries = [] 
+    queries_extra = []
     with open(Constants.BODY_QUERIES_FILES,'r') as file:
         for x in file.readlines():
             line = x.strip()
             if len(line) < 2 or line[:2] == "--" or line[0] == "#":
                 continue
             queries.append(line + " portrait")  
+            queries.append(line + " portrait extra")  
+
+    queries += queries_extra
     
     # Instanties then countries constant
     with open(Constants.COUNTRIES_FILES,'r') as file:

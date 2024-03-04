@@ -46,7 +46,7 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
     
     
     root = Tk()
-    root.geometry(f"{int(ACCEPT_IMAGE_SIZE * 2)}x{ACCEPT_IMAGE_SIZE + 200}") 
+    root.geometry(f"{ACCEPT_IMAGE_SIZE * 2}x{ACCEPT_IMAGE_SIZE + 200}") 
     
     def on_closing():
         setStopFile(True)
