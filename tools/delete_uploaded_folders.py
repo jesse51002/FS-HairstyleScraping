@@ -26,15 +26,17 @@ def delete_uploaded_folders(root_dir, finished_upload_file):
 
 
 if __name__ == "__main__":
-    print("""
-          Delete already uploaded folder from?
-            1. Raw
-            2. Clean
-          """)
+    
     
     chosen = -1
     while chosen < 1 or chosen > 2:
+        print("""
+        Delete already uploaded folder from?
+        1. Raw
+        2. Clean
+        """)
         chosen = int(input())
+        
 
         if chosen >= 1 or chosen <= 2:
             print(f"""

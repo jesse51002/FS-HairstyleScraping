@@ -12,14 +12,15 @@ num = 0
 removed = 0
 
 
-print("""
-Delete already uploaded folder from?
-    1. Raw
-    2. Clean
-    """)
-    
+
 chosen = -1
 while chosen < 1 or chosen > 2:
+    print("""
+    Delete already uploaded folder from?
+        1. Raw
+        2. Clean
+        """)
+    
     chosen = int(input())
 
     if chosen >= 1 or chosen <= 2:

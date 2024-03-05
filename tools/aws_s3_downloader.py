@@ -119,14 +119,15 @@ def download_from_aws(split_dir, completed_download_file=None):
     
 
 if __name__ == "__main__":
-    print("""
-          Choose download mode
-            1. Raw
-            2. Clean
-          """)
+    
     
     chosen = -1
     while chosen < 1 or chosen > 2:
+        print("""
+        Choose download mode
+        1. Raw
+        2. Clean
+        """)
         chosen = int(input())
 
         if chosen >= 1 or chosen <= 2:

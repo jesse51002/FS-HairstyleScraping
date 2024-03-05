@@ -139,14 +139,15 @@ def upload_to_aws(split_dir, finished_upload_file=None, completed_scrape_file=No
 
 
 if __name__ == "__main__":
-    print("""
-          Choose upload mode
-            1. Raw
-            2. Clean
-          """)
+    
     
     chosen = -1
     while chosen < 1 or chosen > 2:
+        print("""
+        Choose upload mode
+        1. Raw
+        2. Clean
+        """)
         chosen = int(input())
 
         if chosen >= 1 or chosen <= 2:

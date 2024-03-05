@@ -11,7 +11,8 @@ try:
         return False
 except ImportError:
     from msvcrt import getch, kbhit  # Windows
-    
+
+import re
 import cv2
 from multiprocessing import Process, Queue, Lock
 import matplotlib.pyplot as plt
@@ -34,6 +35,7 @@ import Constants
 mode = "hair"
 ACCEPT_IMAGE_SIZE = 750
 CLEAN_BACKGROUND_REMOVED_DIR = os.path.join(Constants.CLEAN_BODY_IMAGES_DIR, Constants.BACKGROUND_REMOVED_NAME)
+ACCEPT_BACKGROUND_REMOVED_DIR = os.path.join(Constants.ACCEPTED_BODY_IMAGES_DIR, Constants.BACKGROUND_REMOVED_NAME)
 
 # Style parser
 # Scapes, cleans and shows cleaned image
@@ -55,7 +57,7 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
     # Make the window jump above all
     root.attributes('-topmost',True)
     
-    description_label = tkinter.Label(root, text="Starting", font=('Times 20'))
+    description_label = tkinter.Label(root, text="Starting", font=('Times 16'))
     description_label.place(x=ACCEPT_IMAGE_SIZE, y=ACCEPT_IMAGE_SIZE, anchor="n", width=ACCEPT_IMAGE_SIZE * 2, height=200)
     
     color_image_label = tkinter.Label(root)
@@ -64,11 +66,17 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
     back_rm_image_label = tkinter.Label(root)
     back_rm_image_label.place(x=ACCEPT_IMAGE_SIZE, y=0, anchor="nw", width=ACCEPT_IMAGE_SIZE, height=ACCEPT_IMAGE_SIZE)
     
+    
+    previous_accepted_stack = []
+    resume_stack = []
+    
     while not getStop():
         root.update()
-
+        
         img_pth = None
-        if not accept_queue.empty():
+        if len(resume_stack) != 0:
+            img_pth = resume_stack.pop(0)
+        elif not accept_queue.empty():
             img_pth = accept_queue.get()
 
         # If there is not image to accept currently
@@ -93,8 +101,10 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
             time.sleep(0.05)
             continue
     
-        pth_list = get_file_path(img_pth, root_clean_dir[2:])
-                           
+        located_in_clean = "clean_images" in img_pth 
+    
+        pth_list = get_file_path(img_pth, root_clean_dir if located_in_clean else root_accepted_dir)
+        
         # print("Displaying the image")
         
         # Create a photoimage object of the image in the path
@@ -104,7 +114,9 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
         color_image_label.configure(image=img)
         color_image_label.image = img
         
-        background_image_pth = os.path.join(CLEAN_BACKGROUND_REMOVED_DIR, os.path.basename(img_pth))
+        
+        background_dir = CLEAN_BACKGROUND_REMOVED_DIR if located_in_clean else ACCEPT_BACKGROUND_REMOVED_DIR
+        background_image_pth = os.path.join(background_dir, os.path.basename(img_pth))
         if os.path.isfile(background_image_pth):
             back_pil_image = Image.open(background_image_pth).resize((ACCEPT_IMAGE_SIZE, ACCEPT_IMAGE_SIZE),Image.LANCZOS)
             back_img = ImageTk.PhotoImage(back_pil_image)
@@ -114,8 +126,17 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
             background_image_pth = None
             back_rm_image_label.configure(image=None)
             back_rm_image_label.image = None
+        
+        
+        total_count = accept_count + reject_count
+        if total_count > 0:
+            accept_perc = (float(accept_count) / float(total_count)) * 100.0    
+        else:
+            accept_perc = 100.0
+        
+        time_took_min = (time.time() - start_time) / 60
             
-        description_label.configure(text=f"{pth_list} ||| 'A' to Accept ::: 'R' to reject ::: 'H' to end")    
+        description_label.configure(text=f"{pth_list} ||| 'A' to Accept ::: 'R' to reject ::: 'B' to back ::: 'H' to end |||  {total_count} images, {round(accept_perc, 2)}% in {round(time_took_min, 2)} minutes")    
         
         root.update()
         
@@ -126,10 +147,9 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
         accepted_pth = os.path.join(accepted_dir, os.path.basename(img_pth))
         
         # Gets background removed image save path
-        back_rm_acceppt_dir = os.path.join(root_accepted_dir, Constants.BACKGROUND_REMOVED_NAME)
-        if not os.path.isdir(back_rm_acceppt_dir):
-            os.makedirs(back_rm_acceppt_dir)
-        back_rm_accept_pth = os.path.join(back_rm_acceppt_dir, os.path.basename(img_pth))
+        if not os.path.isdir(ACCEPT_BACKGROUND_REMOVED_DIR):
+            os.makedirs(ACCEPT_BACKGROUND_REMOVED_DIR)
+        back_rm_accept_pth = os.path.join(ACCEPT_BACKGROUND_REMOVED_DIR, os.path.basename(img_pth))
         
         while not getStop():
             key = None
@@ -142,16 +162,18 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
             
             # Moves file to accepted
             if key == "A" or key == "a":
-                # Write/ Overwrite accepted image
-                if os.path.isfile(accepted_pth):
-                    os.remove(accepted_pth)
-                os.rename(img_pth, accepted_pth)
-                
-                if background_image_pth is not None:
-                    if os.path.isfile(back_rm_accept_pth):
-                        os.remove(back_rm_accept_pth)
-                    os.rename(background_image_pth, back_rm_accept_pth)
+                if located_in_clean:
+                    # Write/ Overwrite accepted image
+                    if os.path.isfile(accepted_pth):
+                        os.remove(accepted_pth)
+                    os.rename(img_pth, accepted_pth)
                     
+                    if background_image_pth is not None:
+                        if os.path.isfile(back_rm_accept_pth):
+                            os.remove(back_rm_accept_pth)
+                        os.rename(background_image_pth, back_rm_accept_pth)
+                    
+                previous_accepted_stack.insert(0, accepted_pth)
                 accept_count += 1
                 print("Accepted a total of", accept_count)
                 break             
@@ -162,6 +184,16 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
                     os.remove(background_image_pth)
                 reject_count += 1
                 print("Rejected a total of", reject_count)
+                break
+            # Go back to previous image
+            elif key == "B" or key == "b":
+                if len(previous_accepted_stack) == 0:
+                    print("Nothing to go back to")
+                    continue
+                
+                resume_stack.insert(0, img_pth)
+                resume_stack.insert(0, previous_accepted_stack.pop(0))
+                accept_count -= 1
                 break
             # Forcefully ends the application
             elif key == "H" or key == "h":
@@ -187,7 +219,7 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
     if total_count > 0:
         accept_perc = (float(accept_count) / float(total_count)) * 100.0    
         time_took_min = (time.time() - start_time) / 60
-        print(f"Went throught {total_count} images and accepted {round(accept_perc, 2)}% in {time_took_min}")
+        print(f"Went throught {total_count} images and accepted {round(accept_perc, 2)}% in {time_took_min} minutes")
     
     print("Ending accepting GUI")
 
@@ -241,23 +273,10 @@ def launch():
     scrape_processes = []
     clean_processes = []
     
-    # Instantiates and fills queue with current images
-    clean_queue = Queue() 
-    raw_images = find_images(root_raw_dir)
-    for img in raw_images:
-        clean_queue.put(img)
-    print(f"Instantiates clean queue with {len(raw_images)} raw images")
-    
-    # Instantiates and fills queue with current images
-    accept_queue = Queue() 
-    clean_images = find_images(root_clean_dir)
-    for img in clean_images:
-        accept_queue.put(img)
-    print(f"Instantiates accept queue with {len(clean_images)} clean images")
-    
     scrape_done_lock = Lock()       
-
     
+    clean_queue = Queue() 
+    accept_queue = Queue()
     
     if chosen <= 4:
         splits = None
@@ -288,6 +307,12 @@ def launch():
                 scrape_processes.append(scrape_process)
 
         if should_clean:
+            # Instantiates and fills queue with current images
+            raw_images = find_images(root_raw_dir)
+            for img in raw_images:
+                clean_queue.put(img)
+            print(f"Instantiates clean queue with {len(raw_images)} raw images")
+            
             for _ in range(clean_processes_count):
                 # preprocesses
                 clean_process = Process(target=Preprocess, args=(clean_queue, accept_queue, root_clean_dir, root_raw_dir, mode))
@@ -296,6 +321,12 @@ def launch():
             
 
     if chosen == 1 or chosen == 5:
+        # Instantiates and fills queue with current images
+        clean_images = find_images(root_clean_dir)
+        for img in clean_images:
+            accept_queue.put(img)
+        print(f"Instantiates accept queue with {len(clean_images)} clean images")
+        
         parse_style(accept_queue, root_clean_dir, root_accepted_dir, clean_processes)
     elif chosen >= 2 and chosen <= 4:
         while True:
