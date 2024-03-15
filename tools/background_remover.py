@@ -6,12 +6,12 @@ import cv2
 import numpy as np
 import torch
 
-from human_matting.inference import remove_background
+from p3m_matting.inference import remove_background
 import Constants
 from Utils import find_images
 
 TARGET_BACKGROUND_DIR = os.path.join(Constants.CLEAN_BODY_IMAGES_DIR, Constants.BACKGROUND_REMOVED_NAME)
-BATCH_SIZE = 5
+BATCH_SIZE = 3
 TARGET_SIZE = 1024
 
 
@@ -43,7 +43,7 @@ def remove_images_background():
         img = unscaled_imgs / 255
 
         output_imgs, pred_segments = remove_background(img)
-        output_imgs = output_imgs.detach().cpu().numpy().transpose(0, 2, 3, 1)
+        output_imgs = output_imgs.transpose(0, 2, 3, 1)
         
         for j in range(len(pths)):
             output_img = output_imgs[j]
