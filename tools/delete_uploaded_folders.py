@@ -17,9 +17,11 @@ def delete_uploaded_folders(root_dir, finished_upload_file):
         # Only deletes arleady uploaded files
         if dir not in finished_upload:
             continue
-        
+                
         # Deletes the uploaded file
         shutil.rmtree(os.path.join(root_dir, dir))
+        
+        print(f"Removed {dir}")
             
         
         

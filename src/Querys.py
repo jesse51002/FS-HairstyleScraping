@@ -16,6 +16,12 @@ ATTRIBUTES = {
 
 POSTFIX_ATTR = ["gender", "half"]
 
+EXTRA_TAGS = [
+    "canon", "fujifilm", "nikon", "sony", "panasonic", "olympus", "pentax",
+    "curly", "braids", "dreads", "wavy", "suit"
+    ]
+
+
 def get_queries():
     # Stores the results
     queries = {}
@@ -93,7 +99,10 @@ def create_body_queries():
             if len(line) < 2 or line[:2] == "--" or line[0] == "#":
                 continue
             queries.append(line + " portrait")  
-            queries.append(line + " portrait extra")  
+            
+            query_base = queries[-1]
+            for tag in EXTRA_TAGS:
+                queries.append((query_base + " " + tag).strip())
 
     queries += queries_extra
     

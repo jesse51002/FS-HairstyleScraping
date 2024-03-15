@@ -9,7 +9,7 @@ import time
 import cv2
 
 import Constants
-from Utils import get_flickr_creds
+from Utils import get_flickr_creds, exit_after
 from flickrapi import FlickrAPI
 from flickr_utils.general import download_uri
 
@@ -19,12 +19,7 @@ COUNTRIES = []
 MAX_QUALITY = 2500
 PER_PAGE = 500 # 1-500
 
-EXTRA_TAGS = [
-    "canon", "fujifilm", "nikon", "sony", "panasonic", "olympus", "pentax",
-    "curly", "braids", "dreads", "wavy", "suit"
-    # "dress", "heels", "suit",  "fashion",
-    # "trendy", "confident", "strong", "attractive", "sexy", 
-    ]
+IMAGE_DOWNLOAD_TIMEOUT = 20
 
 
 # Return true if reduced
@@ -51,6 +46,17 @@ def reduce_resolution(img_pth):
             os.remove(img_pth)
 
     return img_rescaled
+
+@exit_after(IMAGE_DOWNLOAD_TIMEOUT)
+def download_image(url, raw_dir):
+    img_pth = download_uri(url, raw_dir)
+    rescaled = reduce_resolution(img_pth)
+    # remove images that weren't loadable
+    if rescaled is None:
+        os.remove(img_pth)
+        img_pth = None
+        
+    return img_pth
     
 def flickr_scrape(search="city portrait", n=10, raw_dir=os.path.join(Constants.RAW_BODY_IMAGES_DIR, "test"), clean_queue=None):
     actual_search = search
@@ -88,13 +94,7 @@ def flickr_scrape(search="city portrait", n=10, raw_dir=os.path.join(Constants.R
                 url = f"https://farm{photo.get('farm')}.staticflickr.com/{photo.get('server')}/{photo.get('id')}_{photo.get('secret')}_b.jpg"
 
             try:
-                img_pth = download_uri(url, raw_dir)
-                rescaled = reduce_resolution(img_pth)
-                # remove images that weren't loadable
-                if rescaled is None:
-                    os.remove(img_pth)
-                    img_pth = None
-                    
+                img_pth = download_image(url, raw_dir)        
             except:
                 img_pth = None
                 print("Error when attempting to download image")
@@ -134,31 +134,22 @@ def body_scrape(query_list : list[str], clean_queue=None, lock=None):
             line = x.strip()
             COUNTRIES.append(line)
     
+    query_list = query_list[1:]
+    
     for query in query_list:
-        
-        
-        
         n = SCRAPE_COUNT if not is_country(query) else COUNTRIES_SCRAPE_COUNT
         
-        query_base = query
-        tags_additions = [""]
-        if "extra" in query:
-            query_base = query[:-len(" extra")]
-            tags_additions = EXTRA_TAGS
-        
-        for tag in tags_additions:
-            actual_query = (query_base + " " + tag).strip()
-            print(f"Scraping {n} imagse from {actual_query}")
+        print(f"Scraping {n} imagse from {query}")
             
-            output_dir = os.path.join(Constants.RAW_BODY_IMAGES_DIR, actual_query)
-            flickr_scrape(search=actual_query, n=n, clean_queue=clean_queue, raw_dir=output_dir)
+        output_dir = os.path.join(Constants.RAW_BODY_IMAGES_DIR, query)
+        flickr_scrape(search=query, n=n, clean_queue=clean_queue, raw_dir=output_dir)
         
-            if lock is None:
-                continue 
-            # Records that it finished scraping
-            with lock:
-                with open(Constants.FINIHSED_BODY_RAW_TXT, 'a') as raw_finished_file:
-                    raw_finished_file.write(f'\n{query}')
+        if lock is None:
+            continue 
+        # Records that it finished scraping
+        with lock:
+            with open(Constants.FINIHSED_BODY_RAW_TXT, 'a') as raw_finished_file:
+                raw_finished_file.write(f'\n{query}')
     
      
 if __name__ == "__main__":

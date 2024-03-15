@@ -54,7 +54,12 @@ for root, dirs, files in os.walk(root_dir):
         if name not in names:
             names.add(name)
             
-            digest = hashlib.sha1(open(path,'rb').read()).digest()
+            try:
+                digest = hashlib.sha1(open(path,'rb').read()).digest()
+            except:
+                is_duplicate = False
+                print("File alraedy being accesseed:", path)
+                continue
             if digest not in hashes:
                 hashes.add(digest)
                 is_duplicate = False

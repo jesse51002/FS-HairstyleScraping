@@ -329,6 +329,20 @@ def launch():
         
         parse_style(accept_queue, root_clean_dir, root_accepted_dir, clean_processes)
     elif chosen >= 2 and chosen <= 4:
+        
+        root = Tk()
+        root.geometry(f"{500}x{500}") 
+        
+        def on_closing():
+            setStopFile(True)
+        root.protocol("WM_DELETE_WINDOW", on_closing)
+        
+        # Make the window jump above all
+        root.attributes('-topmost',True)
+        
+        description_label = tkinter.Label(root, text="'H' TO STOP THE SCAPING/CLEANING", font=('Times 16'))
+        description_label.place(x=250, y=0, anchor="n", width=500, height=500)
+        
         while True:
             scraping = False
             # Checks if still scraping
@@ -347,15 +361,19 @@ def launch():
             if not cleaning and not scraping:
                 break
             
-            print("'H' TO STOP THE SCAPING/CLEANING")
             if kbhit():
                 key = getch().decode("utf-8")
                 if key == "H" or key == "h":
                     # Sets stop to True
                     setStopFile(True)
                     break
-            
-            time.sleep(1)
+                
+            root.update()
+            time.sleep(0.2)
+    
+        root.destroy()
+        
+        
     
     
     # Ensures stop
