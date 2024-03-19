@@ -1,9 +1,13 @@
 import json
 import os
-import tkinter
-from tkinter import *
-from PIL import Image, ImageTk
+try:
+    import tkinter
+    from tkinter import *
+    from PIL import ImageTk
+except ImportError:
+    tkinter = None
 
+from PIL import Image
 
 try:
     from getch import getch     # Linux
@@ -321,6 +325,10 @@ def launch():
             
 
     if chosen == 1 or chosen == 5:
+        if tkinter is None:
+            setStopFile(True)
+            raise Exception("Tkinter isnt avaible on device")
+        
         # Instantiates and fills queue with current images
         clean_images = find_images(root_clean_dir)
         for img in clean_images:
@@ -329,19 +337,20 @@ def launch():
         
         parse_style(accept_queue, root_clean_dir, root_accepted_dir, clean_processes)
     elif chosen >= 2 and chosen <= 4:
-        
-        root = Tk()
-        root.geometry(f"{500}x{500}") 
-        
-        def on_closing():
-            setStopFile(True)
-        root.protocol("WM_DELETE_WINDOW", on_closing)
-        
-        # Make the window jump above all
-        root.attributes('-topmost',True)
-        
-        description_label = tkinter.Label(root, text="'H' TO STOP THE SCAPING/CLEANING", font=('Times 16'))
-        description_label.place(x=250, y=0, anchor="n", width=500, height=500)
+
+        if tkinter is not None:
+            root = Tk()
+            root.geometry(f"{500}x{500}") 
+            
+            def on_closing():
+                setStopFile(True)
+            root.protocol("WM_DELETE_WINDOW", on_closing)
+            
+            # Make the window jump above all
+            root.attributes('-topmost',True)
+            
+            description_label = tkinter.Label(root, text="'H' TO STOP THE SCAPING/CLEANING", font=('Times 16'))
+            description_label.place(x=250, y=0, anchor="n", width=500, height=500)
         
         while True:
             scraping = False
@@ -367,11 +376,16 @@ def launch():
                     # Sets stop to True
                     setStopFile(True)
                     break
+            if tkinter is not None:
+                root.update()
+                time.sleep(0.2)
+            else:
+                print("'H' TO STOP THE SCAPING/CLEANING")
+                time.sleep(1)
                 
-            root.update()
-            time.sleep(0.2)
-    
-        root.destroy()
+
+        if tkinter is not None:
+            root.destroy()
         
         
     

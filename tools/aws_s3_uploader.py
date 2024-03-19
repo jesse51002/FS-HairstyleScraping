@@ -95,7 +95,7 @@ def get_upload_folders(split_dir, finished_file=None, completed_scrape_file=None
     
     for query_folder in os.listdir(split_dir):
         # only adds folders
-        if not os.path.isdir(os.path.join(split_dir, query_folder)):
+        if not os.path.isdir(os.path.join(split_dir, query_folder)) or ".ipynb_checkpoints" in query_folder:
             continue
         
         # Skips folders that have alraedy been uploaded

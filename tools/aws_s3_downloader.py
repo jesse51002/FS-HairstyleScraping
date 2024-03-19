@@ -78,18 +78,18 @@ def get_download_folders(prefix="", completed_download_file=None):
                 line = x.strip()
                 if len(line) == 0:
                     continue
-                finished_download.append(line.replace("\\", "/")[:-4])
+                finished_download.append(line.replace("\\", "/"))
 
     i = 0
     while i < len(keys_in_s3):
-        key = keys_in_s3[i]
+        key = keys_in_s3[i].split("/")[-1][:-4]
         for finished in finished_download:
-            if finished in key:
+            if finished == key:
                 keys_in_s3.pop(i)
                 i -= 1
                 break
         i += 1
-        
+
     return keys_in_s3[:min(MAX_FOLDER_COUNT_DOWNLOAD, len(keys_in_s3))]
             
                 

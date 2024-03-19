@@ -307,7 +307,9 @@ def clean_raw_image(raw_img,
             body_parser=body_parser, 
             clip_model=clip_model,
             res_check=True, 
-            bottom_extend=True)
+            bottom_extend=True,
+            max_faces=1
+        )
 
     # Removes the raw img after it is cleaned
     if delete_raw:   
