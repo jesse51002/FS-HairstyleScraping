@@ -10,7 +10,10 @@ import argparse
 import os
 import os.path as osp
 import warnings
+from Model import Model
 
+import cv2
+import time
 import mmcv
 import torch
 from mmcv import Config, DictAction
@@ -19,7 +22,6 @@ from mmcv.parallel import MMDataParallel, MMDistributedDataParallel
 from mmcv.runner import get_dist_info, init_dist, load_checkpoint
 
 from mmpose.models import build_posenet
-from mmpose.apis import MMPoseInferencer
 
 try:
     from mmcv.runner import wrap_fp16_model
@@ -31,51 +33,51 @@ except ImportError:
 
 import Constants
 
+MODEL_PATH = './src/ViTPose/vitpose+_large.pth'
+CONFIG_PATH = './src/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/vitPose+_large_coco+aic+mpii+ap10k+apt36k+wholebody_256x192_udp.py'
 
-MODEL_PATH = './src/HumanParsing/checkpoints/exp-schp-201908261155-lip.pth'
-
-class body_model(Model):
+class pose_model(Model):
     
     def __init__(self):
-        model = build_posenet(cfg.model)
+        cfg = Config.fromfile(CONFIG_PATH)
+        self.model = build_posenet(cfg.model)
         fp16_cfg = cfg.get('fp16', None)
         if fp16_cfg is not None:
-            wrap_fp16_model(model)
-        load_checkpoint(model, MODEL_PATH, map_location='cpu')
-
-        model = MMDataParallel(model, device_ids=[0])
+            wrap_fp16_model(self.model)
+        load_checkpoint(self.model, MODEL_PATH, map_location='cpu')
+        self.model = fuse_conv_bn(self.model)
+        self.model = MMDataParallel(self.model, device_ids=[0])
         
     @torch.no_grad()
     def inference(self, img):
-        
-        
-        return output, output_perc
+        output = self.model(return_loss=False, **img)
+        print(output)
+        return output
     
     
 if __name__ == "__main__":
-    face_dir = os.path.join(Constants.RAW_BODY_IMAGES_DIR, 'test')
-    mask_dir = os.path.join(Constants.RAW_BODY_IMAGES_DIR, 'masks')
+    images_dir = "./"# os.path.join(Constants.ACCEPTED_BODY_IMAGES_DIR, 'adventure portrait')
     
     accepted_imgs = ["png", "jpg", "jpeg"]
     
-    model = body_model()
+    model = pose_model()
     
-    torch.no_grad()
-    for img_name in os.listdir(face_dir):
+    for img_name in ["1196108903_7f3cc2c4ca_o0.jpg"]:
         if img_name.split(".")[-1] not in accepted_imgs:
             continue
 
         print(img_name)
-        img_pth = os.path.join(face_dir, img_name)
+        img_pth = os.path.join(images_dir, img_name)
         img = cv2.imread(img_pth)
         print("Img shape:",img.shape)
 
         start = time.time()
-        output_img, output_perc = model.inference(img)
-        output_img = output_img.detach().cpu().numpy()[0]
+        output = model.inference(img)
+        # output_img = output_img.detach().cpu().numpy()[0]
         print("Took:", time.time() - start)
-        print("output:", output_img.shape)
+        # print("output:", output.shape)
         
+        exit()
         # setting values to rows and column variables 
         rows = 1
         columns = 2

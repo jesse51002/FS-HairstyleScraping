@@ -90,7 +90,6 @@ for folder in folder_order:
                     digest = hashlib.sha1(open(path, 'rb').read()).digest()
                 except:
                     is_duplicate = False
-                    print()
                     print("File alraedy being accesseed:", path)
                     continue
                 if digest not in hashes:
@@ -99,8 +98,12 @@ for folder in folder_order:
     
             if is_duplicate:
                 print("Removing", path)
-                os.remove(path)
-                removed += 1
+                try:
+                    os.remove(path)
+                    removed += 1
+                except:
+                    print("File cant be removed, alraedy being accesseed:", path)
+                
     
             if num % 1000 == 0:
                 print("Finished", num, "images")
