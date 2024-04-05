@@ -95,9 +95,9 @@ def flickr_scrape(search="city portrait", n=10, raw_dir=os.path.join(Constants.R
 
             try:
                 img_pth = download_image(url, raw_dir)        
-            except:
+            except Exception as err:
                 img_pth = None
-                print("Error when attempting to download image")
+                print("Error when attempting to download image:", err)
                 
             if clean_queue is not None and img_pth is not None:
                 clean_queue.put(img_pth)
@@ -133,9 +133,7 @@ def body_scrape(query_list : list[str], clean_queue=None, lock=None):
         for x in file.readlines():
             line = x.strip()
             COUNTRIES.append(line)
-    
-    query_list = query_list[1:]
-    
+        
     for query in query_list:
         n = SCRAPE_COUNT if not is_country(query) else COUNTRIES_SCRAPE_COUNT
         

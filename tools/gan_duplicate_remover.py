@@ -124,10 +124,13 @@ for folder in folder_order:
     
             if is_duplicate:
                 print("Removing", path)
-                os.remove(path)
-                removed += 1
-                duplicate_found = True
-    
+                try:
+                    os.remove(path)
+                    removed += 1
+                    duplicate_found = True
+                except:
+                    print("File cant be removed, alraedy being accesseed:", path)
+                    
             if num % 1000 == 0:
                 print("Finished", num, "images")
             num += 1
