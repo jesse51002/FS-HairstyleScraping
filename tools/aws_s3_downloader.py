@@ -4,7 +4,7 @@ import shutil
 import boto3
 
 import sys
-sys.path.insert(0,'./src')
+sys.path.insert(0, './src')
 import Constants
 
 from threading import Thread, Lock
@@ -12,13 +12,11 @@ from threading import Thread, Lock
 # s3 boto documentation
 # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html
 
-
 # Test it on a service (yours may be different)
 s3resource = boto3.client('s3')
-
 BUCKET_NAME = "fs-upper-body-gan-dataset"
-
 MAX_FOLDER_COUNT_DOWNLOAD = 10000000
+
 
 def zip_parser(abs_folder_path, zip_file, finished_download_file=None, file_lock=None):
     if not os.path.isdir(abs_folder_path):
@@ -40,7 +38,7 @@ def zip_parser(abs_folder_path, zip_file, finished_download_file=None, file_lock
     print(f"Finsihed parsing {abs_folder_path}")
 
 
-def download_aws_folder(abs_folder_path, s3_key, finished_download_file=None, file_lock=None):
+def download_aws_folder(abs_folder_path, s3_key, finished_download_file=None, file_lock=None, thread_zip_parse=True):
     if not os.path.isdir(abs_folder_path):
         os.makedirs(abs_folder_path)
     
@@ -54,7 +52,6 @@ def download_aws_folder(abs_folder_path, s3_key, finished_download_file=None, fi
     zip_process_thread = Thread(target=zip_parser, args=(abs_folder_path, zip_file_pth, finished_download_file, file_lock))
     zip_process_thread.start()
 
-    
     return zip_process_thread
     
 
@@ -62,7 +59,6 @@ def get_download_folders(prefix="", completed_download_file=None):
     s3_list = s3resource.list_objects_v2(Bucket=BUCKET_NAME, Prefix=prefix, MaxKeys=1000)['Contents']
     keys_in_s3 = [x['Key'] for x in s3_list]
     keys_in_s3.remove(prefix)
-    
     
     # Gets folders that have already been downloaded
     finished_download = []
@@ -73,7 +69,7 @@ def get_download_folders(prefix="", completed_download_file=None):
             file.close()
              
         # Instanties the finihsed folders from file
-        with open(completed_download_file,'r') as file:
+        with open(completed_download_file, 'r') as file:
             for x in file.readlines():
                 line = x.strip()
                 if len(line) == 0:
@@ -94,12 +90,11 @@ def get_download_folders(prefix="", completed_download_file=None):
             
                 
 def download_from_aws(split_dir, completed_download_file=None):
-     # Creates file if it doesnt exist
+    # Creates file if it doesnt exist
     if not os.path.isfile(completed_download_file):
         file = open(completed_download_file, 'w')
         file.close()
 
-    
     rel_base = split_dir.split("/")[-1] + "/"
     
     download_folders = get_download_folders(rel_base, completed_download_file)
@@ -119,8 +114,6 @@ def download_from_aws(split_dir, completed_download_file=None):
     
 
 if __name__ == "__main__":
-    
-    
     chosen = -1
     while chosen < 1 or chosen > 2:
         print("""

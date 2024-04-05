@@ -20,7 +20,7 @@ ANGLE_FACE_MULT = 2
 
 model = SixDRepNet()
 detect_model = detection_model()
-clip_model = Clip()
+clip_model = DataClassifierClip()
 
 def get_face_angle(img):
     faces = detect_model.inference(img)
@@ -73,39 +73,20 @@ def get_face_angle(img):
     pitch, yaw, roll = model.predict(bounded_image)
     return pitch, yaw, roll
 
-def get_image_insights(img_pth):
+
+def get_image_insights(img_pth, clip_model=clip_model):
     img = cv2.imread(img_pth)
 
     pitch, yaw, roll = get_face_angle(img)
+
+    classifications = clip_model(img)
+    for key in classifications:
+        classifications[key] = classifications[key].argmax()
+
+    classifications["HairType"] = clip_model.hair_types_list[classifications["HairType"]]
+    classifications["Ethnicity"] = clip_model.ethnicites_list[classifications["HairType"]]
+    classifications["Sex"] = clip_model.sex_list[classifications["HairType"]]
     
     
     
-
-
-if __name__ == "__main__":
-    chosen = -1
-    while chosen < 1 or chosen > 2:
-        print("""
-        Delete already uploaded folder from?
-        1. Clean
-        2. Accepted
-        """)
-        chosen = int(input())
-        
-
-        if chosen >= 1 or chosen <= 2:
-            print(f"""
-            You have picked option {chosen}, are sure this action is irreversible\n
-            Type 'confirm' to proceed
-            """)
-
-            if input() != "confirm":
-                print(f"'confirm' was typed incorrectly. Restart...")
-                continue
-        else:
-            print(f"{chosen} is an invalid choice, pick a valid choice")
-            
-    if chosen == 1:
-        delete_uploaded_folders(Constants.CLEAN_BODY_IMAGES_DIR, finished_upload_file=Constants.FINIHSED_BODY_CLEAN_UPLOAD)
-    elif chosen == 2:
-        delete_uploaded_folders(Constants., finished_upload_file=Constants.)
+    
