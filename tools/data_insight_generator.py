@@ -8,6 +8,7 @@ from sixdrepnet import SixDRepNet
 import matplotlib.pyplot as plt
 import numpy as np
 import shutil
+import boto3
 
 from Detection import detection_model
 from Clip import DataClassifierClip
@@ -18,6 +19,9 @@ import pandas as pd
 
 ANGLE_FACE_MULT = 2
 DATAFRAME_SAVE_FILE = "./data/clean_image_insights.csv"
+VISUALIZATION_SAVE_DIRECTORY = "./data/clean_insights_visualization"
+S3_INSIGHTS_KEY = "clean_image_insights.csv"
+S3_INSIGHTS_BUCKET = "fs-upper-body-gan-dataset"
 
 model = SixDRepNet()
 detect_model = detection_model()
@@ -177,19 +181,60 @@ def create_insights_pandas():
     dataframe.to_csv(DATAFRAME_SAVE_FILE, sep=',', index=False, encoding='utf-8')
 
 
+def create_visualizations():
+    print("Create visualizations")
+    
+    if not os.path.isdir(VISUALIZATION_SAVE_DIRECTORY):
+        os.makedirs(VISUALIZATION_SAVE_DIRECTORY)
+
+    dataframe = pd.read_csv(DATAFRAME_SAVE_FILE)
+
+    for col in dataframe.columns:
+        if col == "ImagePath":
+            continue
+            
+        # make the plot
+        dataframe.groupby([col]).count().plot(kind='pie', autopct='%1.0f%%', title=col, y='ImagePath')
+        # save the plot
+        plt.savefig(os.path.join(VISUALIZATION_SAVE_DIRECTORY, col))
+        print("Saved visualizations for", col)
+
+
+def export_insights():
+    s3resource = boto3.client('s3')
+    s3resource.upload_file(DATAFRAME_SAVE_FILE, S3_INSIGHTS_BUCKET, S3_INSIGHTS_KEY)
+    print("Uploaded insights csv")
+
+
+def download_insights():
+    s3resource = boto3.client('s3')
+    if os.path.isfile(DATAFRAME_SAVE_FILE):
+        print("This will override current dataframe insights file\n Type 'confirm' to continue")
+        user_input = input()
+        if user_input != "confirm":
+            exit()
+        os.remove(DATAFRAME_SAVE_FILE)
+        print("Deleted old dataframe")
+        
+    s3resource.download_file(Bucket=S3_INSIGHTS_BUCKET, Key=S3_INSIGHTS_KEY, Filename=DATAFRAME_SAVE_FILE)
+    print("Downloaded insights csv")
+
+
 if __name__ == "__main__":
     chosen = -1
-    while chosen < 1 or chosen > 2:
+    while chosen < 1 or chosen > 3:
         print("""
         Do you want to create csv file or visualize
             1. Create csv
             2. Visualize csv
+            3. Export csv
             """)
         chosen = int(input())
 
     if chosen == 1:
         create_insights_pandas()
     elif chosen == 2:
-        print("Not implemented")
-
+        create_visualizations()
+    elif chosen == 3:
+        export_insights()
     
