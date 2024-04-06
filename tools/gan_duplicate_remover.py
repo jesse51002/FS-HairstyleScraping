@@ -10,7 +10,7 @@ import pickle
 from aws_s3_downloader import download_aws_folder, get_download_folders
 from aws_s3_uploader import upload_aws_folder
 
-pickle_file = "./data/duplicate_hash_store"
+pickle_file = "./data/duplicate_hash_store.pickle"
 
 chosen = -1
 while chosen < 1 or chosen > 2:
@@ -67,6 +67,10 @@ if check_order_file is not None:
 else:
     folder_order = os.listdir(root_dir)
 
+hashes = set()
+names = set()
+folders_finished = set()
+
 if chosen == 2:
     rel_base = root_dir.split("/")[-1] + "/"
     download_folders = get_download_folders(rel_base)
@@ -78,15 +82,22 @@ if chosen == 2:
         if folder not in download_folders:
             folder_order.remove(folder)
 
-hashes = set()
-names = set()
+    if os.path.isfile(pickle_file):
+        with open(pickle_file, "rb") as input_file:
+            stored_data = pickle.load(input_file)
+        hashes = stored_data["hashes"]
+        names = stored_data["names"]
+        folders_finished = stored_data["folders_finished"]
 
 num = 0
 removed = 0
 
 for folder in folder_order:
     folder_path = os.path.join(root_dir, folder)
-
+    if folder in folders_finished:
+        print(folder, "was already parsed in the pickle file")
+        continue
+    
     folder_downloaded = False
     if not os.path.isdir(folder_path):
         if chosen == 1 or "0background_free" in folder:
@@ -140,6 +151,9 @@ for folder in folder_order:
             upload_aws_folder(folder_path, os.path.join(rel_base, folder))
             
         shutil.rmtree(folder_path)
+
+    # Adds to finished folder to be saved in picke file later
+    folders_finished.add(folder)
             
             
 print(f"Went through {num} images and removed {removed} duplicates")
@@ -150,6 +164,7 @@ with open(pickle_file, 'wb') as file:
     # A new file will be created
     pickle.dump({
         "hashes": hashes,
-        "names": names
+        "names": names,
+        "folders_finished": folders_finished
     }, file)
 print("Finished saving snapshot to pickle")
