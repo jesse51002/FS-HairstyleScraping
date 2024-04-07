@@ -58,7 +58,8 @@ def download_aws_folder(abs_folder_path, s3_key, finished_download_file=None, fi
 def get_download_folders(prefix="", completed_download_file=None):
     s3_list = s3resource.list_objects_v2(Bucket=BUCKET_NAME, Prefix=prefix, MaxKeys=1000)['Contents']
     keys_in_s3 = [x['Key'] for x in s3_list]
-    keys_in_s3.remove(prefix)
+    if prefix in keys_in_s3:
+        keys_in_s3.remove(prefix)
     
     # Gets folders that have already been downloaded
     finished_download = []

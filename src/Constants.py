@@ -18,6 +18,7 @@ COUNTRIES_FILES = "./countries"
 # Body files
 RAW_BODY_IMAGES_DIR = "./data/raw_images"
 CLEAN_BODY_IMAGES_DIR = "./data/clean_images"
+CLEAN_BODY_BACK_REM_IMAGES_DIR = "./data/clean_images_background_removed"
 ACCEPTED_BODY_IMAGES_DIR = "./data/accepted_images"
 
 FINIHSED_BODY_RAW_TXT = "./data/finished_raw"

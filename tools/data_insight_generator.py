@@ -3,7 +3,6 @@ sys.path.insert(0,'./src')
 
 import os
 import cv2
-import time
 from sixdrepnet import SixDRepNet
 import matplotlib.pyplot as plt
 import numpy as np
