@@ -43,10 +43,10 @@ def remove_images_background():
     already_done = get_download_folders(AWS_CLEAN_ROOT_KEY)
     for i in range(len(already_done)):
         already_done[i] = already_done[i].split("/")[-1][:-4]
-
     folders_to_anaylze -= set(already_done)
-    
-    for folder in folders_to_anaylze:
+
+    folders_to_anaylze = list(folders_to_anaylze)
+    for folder_num, folder in enumerate(folders_to_anaylze):
         print("Removing background from", folder)
         folder_path = os.path.join(root_dir, folder)
     
@@ -96,8 +96,7 @@ def remove_images_background():
         upload_aws_folder(back_rem_dir, os.path.join(AWS_CLEAN_ROOT_KEY, folder))
         shutil.rmtree(back_rem_dir)
             
-        if i % 100 == 0:
-            print(f"Removed Background {i}/{len(image_pths)}")
+        print(f"Finished doing folder {folder_num + 1}/{len(folders_to_anaylze)}")
 
 
 if __name__ == "__main__":
