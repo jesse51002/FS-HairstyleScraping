@@ -70,12 +70,12 @@ def get_face_angle(img):
             ]
         
     bounded_image = cv2.copyMakeBorder(
-        bounded_image, 
-        b_bounds, # bottom
-        t_bounds, #top
-        l_bounds,  # left
-        r_bounds, # right
-        cv2.BORDER_CONSTANT #borderType
+        bounded_image,
+        b_bounds,  # bottom
+        t_bounds,  # top
+        l_bounds,   # left
+        r_bounds,  # right
+        cv2.BORDER_CONSTANT  # borderType
         )
 
     pitch, yaw, roll = model.predict(bounded_image)
@@ -134,8 +134,18 @@ def get_image_insights(img_pth, clip_model=clip_model, pose_inferencer=pose_infe
 
 
 def create_insights_pandas():
-    dataframe = pd.DataFrame(columns=COLUMNS)
+    
+    if os.path.isfile(DATAFRAME_SAVE_FILE):
+        dataframe = pd.read_csv(DATAFRAME_SAVE_FILE)
+    else:
+        dataframe = pd.DataFrame(columns=COLUMNS)
 
+    # Gets folders already done to not use duplicates
+    already_done_folders = set()
+    for i in range(dataframe.shape[0]):
+        folder_name = dataframe.loc[i, "ImagePath"].split("/")[-2]
+        already_done_folders.add(folder_name)
+    
     rel_base = root_dir.split("/")[-1] + "/"
 
     folders_to_anaylze = []
@@ -150,7 +160,7 @@ def create_insights_pandas():
     folders_to_anaylze += s3_folders
     
     # Removes duplicates
-    folders_to_anaylze = set(folders_to_anaylze)
+    folders_to_anaylze = set(folders_to_anaylze) - already_done_folders
 
     total_images_done = 0
     for folder in folders_to_anaylze:

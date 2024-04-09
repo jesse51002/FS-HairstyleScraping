@@ -8,6 +8,7 @@ sys.path.insert(0, './src')
 import Constants
 
 from threading import Thread, Lock
+from s3_list import list_s3_from_root
 
 # s3 boto documentation
 # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html
@@ -57,8 +58,7 @@ def download_aws_folder(abs_folder_path, s3_key, finished_download_file=None, fi
     
 
 def get_download_folders(prefix="", completed_download_file=None):
-    s3_list = s3resource.list_objects_v2(Bucket=BUCKET_NAME, Prefix=prefix, MaxKeys=1000)['Contents']
-    keys_in_s3 = [x['Key'] for x in s3_list]
+    keys_in_s3 = list_s3_from_root(prefix)
     if prefix in keys_in_s3:
         keys_in_s3.remove(prefix)
     
