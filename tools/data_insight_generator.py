@@ -125,28 +125,30 @@ def get_image_insights(img_pth, clip_model, pose_inferencer, detect_model, angle
 
 
 def create_insights_pandas():
-    if os.path.isfile(Constants.DATAFRAME_SAVE_FILE):
-        dataframe = pd.read_csv(Constants.DATAFRAME_SAVE_FILE)
-    else:
-        dataframe = pd.DataFrame(columns=COLUMNS)
     from Detection import detection_model
     from Clip import DataClassifierClip
     from ViTPose.pose_extract import pose_model
     from sixdrepnet import SixDRepNet
+    
+    if os.path.isfile(Constants.DATAFRAME_SAVE_FILE):
+        dataframe = pd.read_csv(Constants.DATAFRAME_SAVE_FILE)
+        print("Loading csv from save file")
+    else:
+        dataframe = pd.DataFrame(columns=COLUMNS)
     
     angle_model = SixDRepNet()
     detect_model = detection_model()
     clip_model = DataClassifierClip()
     pose_inferencer = pose_model()
 
-    dataframe = pd.DataFrame(columns=COLUMNS)
-
     # Gets folders already done to not use duplicates
     already_done_folders = set()
     for i in range(dataframe.shape[0]):
+        if pd.isna(dataframe.loc[i, "ImagePath"]):
+            continue
         folder_name = dataframe.loc[i, "ImagePath"].split("/")[-2]
         already_done_folders.add(folder_name)
-    
+    S
     rel_base = root_dir.split("/")[-1] + "/"
 
     folders_to_anaylze = []
@@ -159,10 +161,10 @@ def create_insights_pandas():
     for i in range(len(s3_folders)):
         s3_folders[i] = s3_folders[i].split("/")[-1][:-4]
     folders_to_anaylze += s3_folders
-    
+
     # Removes duplicates
     folders_to_anaylze = set(folders_to_anaylze) - already_done_folders
-
+    
     total_images_done = 0
     for folder in folders_to_anaylze:
         if Constants.BACKGROUND_REMOVED_NAME in folder:
