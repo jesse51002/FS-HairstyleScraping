@@ -20,6 +20,7 @@ RAW_BODY_IMAGES_DIR = "./data/raw_images"
 CLEAN_BODY_IMAGES_DIR = "./data/clean_images"
 CLEAN_BODY_BACK_REM_IMAGES_DIR = "./data/clean_images_background_removed"
 ACCEPTED_BODY_IMAGES_DIR = "./data/accepted_images"
+ACCEPT_BODY_BACK_REM_IMAGES_DIR = "./data/accept_images_background_removed"
 
 FINIHSED_BODY_RAW_TXT = "./data/finished_raw"
 FINIHSED_BODY_RAW_UPLOAD = "./data/finished_raw_aws_upload"
@@ -28,7 +29,7 @@ FINIHSED_BODY_RAW_DOWNLOAD = "./data/finished_raw_aws_download"
 FINIHSED_BODY_CLEAN_TXT = "./data/finished_clean"
 FINIHSED_BODY_CLEAN_UPLOAD = "./data/finished_clean_aws_upload"
 FINIHSED_BODY_CLEAN_DOWNLOAD = "./data/finished_clean_aws_download"
-
+FINIHSED_BODY_BACK_REM_CLEAN_DOWNLOAD = "./data/finished_clean_back_rem_aws_download"
 FLICKR_CREDS_FILE = "./flickr_creds"
 
 

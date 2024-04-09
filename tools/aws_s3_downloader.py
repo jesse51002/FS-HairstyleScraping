@@ -30,7 +30,8 @@ def zip_parser(abs_folder_path, zip_file, finished_download_file=None, file_lock
             file_lock.acquire()
 
         with open(finished_download_file, 'a') as finished_file:
-            finished_file.write(f'\n{abs_folder_path.split("/")[-1]}')
+            folder_name = abs_folder_path.replace("\\", "/").split("/")[-1]
+            finished_file.write(f'\n{folder_name}')
 
         if file_lock is not None:
             file_lock.release()
@@ -75,7 +76,7 @@ def get_download_folders(prefix="", completed_download_file=None):
                 line = x.strip()
                 if len(line) == 0:
                     continue
-                finished_download.append(line.replace("\\", "/"))
+                finished_download.append(line.replace("\\", "/").split("/")[-1])
 
     i = 0
     while i < len(keys_in_s3):
@@ -141,4 +142,5 @@ if __name__ == "__main__":
         download_from_aws(Constants.RAW_BODY_IMAGES_DIR, completed_download_file=Constants.FINIHSED_BODY_RAW_DOWNLOAD)
     elif chosen == 2:
         download_from_aws(Constants.CLEAN_BODY_IMAGES_DIR, completed_download_file=Constants.FINIHSED_BODY_CLEAN_DOWNLOAD)
+        download_from_aws(Constants.CLEAN_BODY_BACK_REM_IMAGES_DIR, completed_download_file=Constants.FINIHSED_BODY_BACK_REM_CLEAN_DOWNLOAD)
     
