@@ -10,7 +10,7 @@ import pickle
 from aws_s3_downloader import download_aws_folder, get_download_folders
 from aws_s3_uploader import upload_aws_folder
 
-pickle_file = "./data/duplicate_hash_store.pickle"
+
 
 chosen = -1
 while chosen < 1 or chosen > 2:
@@ -38,12 +38,16 @@ while chosen < 1 or chosen > 2:
 root_dir = None
 check_order_file = None
 
+pickle_file = None
+
 if chosen == 1:
     root_dir = Constants.RAW_BODY_IMAGES_DIR
     check_order_file = Constants.FINIHSED_BODY_RAW_TXT
+    pickle_file = "./data/duplicate_hash_store_raw.pickle"
 elif chosen == 2:
     root_dir = Constants.CLEAN_BODY_IMAGES_DIR
     check_order_file = Constants.FINIHSED_BODY_CLEAN_UPLOAD
+    pickle_file = "./data/duplicate_hash_store.pickle"
 
 
 folder_order = []
@@ -82,12 +86,12 @@ if chosen == 2:
         if folder not in download_folders:
             folder_order.remove(folder)
 
-    if os.path.isfile(pickle_file):
-        with open(pickle_file, "rb") as input_file:
-            stored_data = pickle.load(input_file)
-        hashes = stored_data["hashes"]
-        names = stored_data["names"]
-        folders_finished = stored_data["folders_finished"]
+if os.path.isfile(pickle_file):
+    with open(pickle_file, "rb") as input_file:
+        stored_data = pickle.load(input_file)
+    hashes = stored_data["hashes"]
+    names = stored_data["names"]
+    folders_finished = stored_data["folders_finished"]
 
 num = 0
 removed = 0

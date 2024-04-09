@@ -24,9 +24,6 @@ def delete_uploaded_folders(root_dir, finished_upload_file):
         print(f"Removed {dir}")
             
         
-        
-
-
 if __name__ == "__main__":
     
     
