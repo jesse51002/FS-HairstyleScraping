@@ -5,6 +5,7 @@ import Constants
 import re
 import numpy as np
 import threading
+import pandas as pd
 try:
     import thread
 except ImportError:
@@ -39,6 +40,41 @@ def find_images(path: str):
             img_list.append(path)
         
     return img_list
+
+def get_gan_data_priorty_list():
+    if not os.path.isfile(Constants.DATAFRAME_SAVE_FILE):
+        return find_images(Constants.CLEAN_BODY_IMAGES_DIR)
+    
+    dataframe = pd.read_csv(Constants.DATAFRAME_SAVE_FILE)
+    
+    priority_list = []
+    for i in range(dataframe.shape[0]):
+        priority = 0
+        
+        if dataframe.loc[i, "HandDown"]:
+            priority += 5
+        
+        if dataframe.loc[i, "HairType"] in ["braids and dreads", "afro hair", "curly hair"]:
+            priority += 3 
+            
+        if dataframe.loc[i, "Sex"] == "Male":
+            priority += 1
+            
+        priority_list.append(priority)
+    
+    # Inserts then sorts by priority
+    dataframe.insert(0, "Priority", priority_list, True)
+    dataframe = dataframe.sort_values(by=['Priority'], ascending=False, ignore_index=True)
+    
+    priority_pth_list = []
+    for i in range(dataframe.shape[0]):
+        if dataframe.loc[i, "ImagePath"] is None or pd.isna(dataframe.loc[i, "ImagePath"]):
+            continue
+        
+        relevant_pth = "/".join(dataframe.loc[i, "ImagePath"].split("/")[-2:])
+        priority_pth_list.append(os.path.join(Constants.CLEAN_BODY_IMAGES_DIR, relevant_pth))
+    
+    return priority_pth_list
 
 # Finds all the images in a directory
 def delete_empty(path: str):    

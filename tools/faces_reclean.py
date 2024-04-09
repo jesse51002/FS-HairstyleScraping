@@ -12,8 +12,6 @@ from aws_s3_downloader import download_aws_folder, get_download_folders
 from aws_s3_uploader import upload_aws_folder
 
 
-DATAFRAME_SAVE_FILE = "./data/clean_image_insights.csv"
-
 detect_model = detection_model()
 root_dir = Constants.CLEAN_BODY_IMAGES_DIR
 
@@ -23,8 +21,8 @@ def main():
     total_count = 0
 
     dataframe = None
-    if os.path.isfile(DATAFRAME_SAVE_FILE):
-        dataframe = pd.read_csv(DATAFRAME_SAVE_FILE)
+    if os.path.isfile(Constants.DATAFRAME_SAVE_FILE):
+        dataframe = pd.read_csv(Constants.DATAFRAME_SAVE_FILE)
 
     rel_base = root_dir.split("/")[-1] + "/"
 
@@ -89,9 +87,9 @@ def main():
             shutil.rmtree(folder_path)
 
     if dataframe is not None:
-        if os.path.isfile(DATAFRAME_SAVE_FILE):
-            os.remove(DATAFRAME_SAVE_FILE)
-        dataframe.to_csv(DATAFRAME_SAVE_FILE, sep=',', index=False, encoding='utf-8')
+        if os.path.isfile(Constants.DATAFRAME_SAVE_FILE):
+            os.remove(Constants.DATAFRAME_SAVE_FILE)
+        dataframe.to_csv(Constants.DATAFRAME_SAVE_FILE, sep=',', index=False, encoding='utf-8')
 
         print("UPDATED THE CSV INSIGHTS FILE")
     

@@ -34,6 +34,7 @@ FLICKR_CREDS_FILE = "./flickr_creds"
 
 
 BACKGROUND_REMOVED_NAME = "0background_free"
+DATAFRAME_SAVE_FILE = "./data/clean_image_insights.csv"
 
 # Stop file
 STOP_FILE  = "stop.json"
