@@ -3,29 +3,20 @@ sys.path.insert(0,'./src')
 
 import os
 import cv2
-from sixdrepnet import SixDRepNet
 import matplotlib.pyplot as plt
 import numpy as np
 import shutil
 import boto3
 
-from Detection import detection_model
-from Clip import DataClassifierClip
-from ViTPose.pose_extract import pose_model
 import Constants
 from aws_s3_downloader import download_aws_folder, get_download_folders
 import pandas as pd
 
 ANGLE_FACE_MULT = 2
-DATAFRAME_SAVE_FILE = "./data/clean_image_insights.csv"
+
 VISUALIZATION_SAVE_DIRECTORY = "./data/clean_insights_visualization"
 S3_INSIGHTS_KEY = "clean_image_insights.csv"
 S3_INSIGHTS_BUCKET = "fs-upper-body-gan-dataset"
-
-model = SixDRepNet()
-detect_model = detection_model()
-clip_model = DataClassifierClip()
-pose_inferencer = pose_model()
 
 COLUMNS = ["ImagePath", "looking_forward", "HairType", "Ethnicity", "Sex", "HandDown"]
 
@@ -34,7 +25,7 @@ FRONT_ANGLES = np.array([[0, 13], [0, 13], [0, 13]])
 root_dir = Constants.CLEAN_BODY_IMAGES_DIR
 
 
-def get_face_angle(img):
+def get_face_angle(img, detect_model, angle_model):
     faces = detect_model.inference(img)
 
     # No face detected
@@ -78,11 +69,11 @@ def get_face_angle(img):
         cv2.BORDER_CONSTANT #borderType
         )
 
-    pitch, yaw, roll = model.predict(bounded_image)
+    pitch, yaw, roll = angle_model.predict(bounded_image)
     return pitch, yaw, roll
 
 
-def get_image_insights(img_pth, clip_model=clip_model, pose_inferencer=pose_inferencer):
+def get_image_insights(img_pth, clip_model, pose_inferencer, detect_model, angle_model):
     img = cv2.imread(img_pth)
 
     if img is None:
@@ -97,7 +88,7 @@ def get_image_insights(img_pth, clip_model=clip_model, pose_inferencer=pose_infe
         
     relative_path = "/".join(img_pth.split("/")[-3:])
 
-    pitch, yaw, roll = get_face_angle(img)
+    pitch, yaw, roll = get_face_angle(img, detect_model, angle_model)
     looking_forward = (
         (abs(pitch) > FRONT_ANGLES[0, 0] and abs(pitch) < FRONT_ANGLES[0, 1]) and
         (abs(yaw) > FRONT_ANGLES[1, 0] and abs(yaw) < FRONT_ANGLES[1, 1]) and
@@ -134,6 +125,17 @@ def get_image_insights(img_pth, clip_model=clip_model, pose_inferencer=pose_infe
 
 
 def create_insights_pandas():
+    from Detection import detection_model
+    from Clip import DataClassifierClip
+    from ViTPose.pose_extract import pose_model
+    from sixdrepnet import SixDRepNet
+    
+    angle_model = SixDRepNet()
+    detect_model = detection_model()
+    clip_model = DataClassifierClip()
+    pose_inferencer = pose_model()
+
+    
     dataframe = pd.DataFrame(columns=COLUMNS)
 
     rel_base = root_dir.split("/")[-1] + "/"
@@ -168,7 +170,7 @@ def create_insights_pandas():
 
         for img_name in os.listdir(folder_path):
             img_pth = os.path.join(folder_path, img_name)
-            img_insights = get_image_insights(img_pth)
+            img_insights = get_image_insights(img_pth, clip_model, pose_inferencer, detect_model, angle_model)
             dataframe = pd.concat([dataframe, img_insights], ignore_index=True)
             total_images_done += 1
             print(f"{total_images_done}: got insights from {img_pth}")
@@ -177,7 +179,7 @@ def create_insights_pandas():
             shutil.rmtree(folder_path)
 
     # Saves the dataframe
-    dataframe.to_csv(DATAFRAME_SAVE_FILE, sep=',', index=False, encoding='utf-8')
+    dataframe.to_csv(Constants.DATAFRAME_SAVE_FILE, sep=',', index=False, encoding='utf-8')
 
 
 def create_visualizations():
@@ -186,7 +188,7 @@ def create_visualizations():
     if not os.path.isdir(VISUALIZATION_SAVE_DIRECTORY):
         os.makedirs(VISUALIZATION_SAVE_DIRECTORY)
 
-    dataframe = pd.read_csv(DATAFRAME_SAVE_FILE)
+    dataframe = pd.read_csv(Constants.DATAFRAME_SAVE_FILE)
 
     for col in dataframe.columns:
         if col == "ImagePath":
@@ -201,32 +203,33 @@ def create_visualizations():
 
 def export_insights():
     s3resource = boto3.client('s3')
-    s3resource.upload_file(DATAFRAME_SAVE_FILE, S3_INSIGHTS_BUCKET, S3_INSIGHTS_KEY)
+    s3resource.upload_file(Constants.DATAFRAME_SAVE_FILE, S3_INSIGHTS_BUCKET, S3_INSIGHTS_KEY)
     print("Uploaded insights csv")
 
 
 def download_insights():
     s3resource = boto3.client('s3')
-    if os.path.isfile(DATAFRAME_SAVE_FILE):
+    if os.path.isfile(Constants.DATAFRAME_SAVE_FILE):
         print("This will override current dataframe insights file\n Type 'confirm' to continue")
         user_input = input()
         if user_input != "confirm":
             exit()
-        os.remove(DATAFRAME_SAVE_FILE)
+        os.remove(Constants.DATAFRAME_SAVE_FILE)
         print("Deleted old dataframe")
         
-    s3resource.download_file(Bucket=S3_INSIGHTS_BUCKET, Key=S3_INSIGHTS_KEY, Filename=DATAFRAME_SAVE_FILE)
+    s3resource.download_file(Bucket=S3_INSIGHTS_BUCKET, Key=S3_INSIGHTS_KEY, Filename=Constants.DATAFRAME_SAVE_FILE)
     print("Downloaded insights csv")
 
 
 if __name__ == "__main__":
     chosen = -1
-    while chosen < 1 or chosen > 3:
+    while chosen < 1 or chosen > 4:
         print("""
         Do you want to create csv file or visualize
             1. Create csv
             2. Visualize csv
             3. Export csv
+            4. Download csv
             """)
         chosen = int(input())
 
@@ -236,4 +239,6 @@ if __name__ == "__main__":
         create_visualizations()
     elif chosen == 3:
         export_insights()
+    elif chosen == 4:
+        download_insights()
     

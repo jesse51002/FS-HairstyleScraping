@@ -27,7 +27,7 @@ import torch
 
 from Preprocessor import Preprocess
 from Utils import setStopFile, getStop, find_images, \
-    split_hair_dict, get_file_path, delete_empty, split_body_arr
+    split_hair_dict, get_file_path, delete_empty, split_body_arr, get_gan_data_priorty_list
 from Querys import get_queries, create_body_queries
 from Scrapper import hair_scrape
 from FlickrScrape.flickr_scraper import body_scrape
@@ -330,7 +330,10 @@ def launch():
             raise Exception("Tkinter isnt avaible on device")
         
         # Instantiates and fills queue with current images
-        clean_images = find_images(root_clean_dir)
+        if mode == "body":
+            clean_images = get_gan_data_priorty_list()
+        else:
+            clean_images = find_images(root_clean_dir)
         for img in clean_images:
             accept_queue.put(img)
         print(f"Instantiates accept queue with {len(clean_images)} clean images")
