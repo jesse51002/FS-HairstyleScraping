@@ -37,20 +37,21 @@ def list_s3_from_root(root_name):
 
         download_orc = True
 
-    data = open(ORC_FILE, 'rb')
-    reader = pyorc.Reader(data)
-    columns = reader.schema.fields
-    columns = [col_name for col_idx, col_name in sorted([
-        (reader.schema.find_column_id(c), c) for c in columns
-    ])]
-    df = pd.DataFrame(reader, columns=columns)
+    with open(ORC_FILE, 'rb') as data:
+        reader = pyorc.Reader(data)
+
+        columns = reader.schema.fields
+        columns = [col_name for col_idx, col_name in sorted([
+            (reader.schema.find_column_id(c), c) for c in columns
+        ])]
+        df = pd.DataFrame(reader, columns=columns)
 
     relevant_keys = []
     
     for i in range(df.shape[0]):
         if root_name in df.loc[i, "key"]:
             relevant_keys.append(df.loc[i, "key"])
-    print("Found relevant keys from orc file")
+    print(f"Found {len(relevant_keys)} from {root_name} in the orc file")
     
     os.remove(ORC_FILE)
     os.remove(JSON_FILE)
