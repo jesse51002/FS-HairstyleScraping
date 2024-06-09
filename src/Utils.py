@@ -30,7 +30,7 @@ def find_images(path: str):
     
     if os.path.isdir(path):
         for sub in os.listdir(path):
-            if ".ipynb_checkpoints" in sub or sub == Constants.BACKGROUND_REMOVED_NAME:
+            if ".ipynb_checkpoints" in sub:
                 continue
             img_list += find_images(os.path.join(path, sub))
     else:
@@ -72,7 +72,9 @@ def get_gan_data_priorty_list():
             continue
         
         relevant_pth = "/".join(dataframe.loc[i, "ImagePath"].split("/")[-2:])
-        priority_pth_list.append(os.path.join(Constants.CLEAN_BODY_IMAGES_DIR, relevant_pth))
+        img_pth = os.path.join(Constants.CLEAN_BODY_IMAGES_DIR, relevant_pth)
+        if os.path.isfile(img_pth):
+            priority_pth_list.append(img_pth)
     
     return priority_pth_list
 

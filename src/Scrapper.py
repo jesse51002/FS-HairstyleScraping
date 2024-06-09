@@ -7,7 +7,7 @@ import Constants
 
 WEBDRIVER_PATH = os.path.normpath(os.path.join(os.getcwd(), "src", "GoogleImageScraper", 'webdriver', webdriver_executable()))
 
-SCRAPE_COUNT = 20
+SCRAPE_COUNT = 1000
 HIDE_BROWSER = False
 MIN_RESOLUTION = (500,700)
 MAX_RESOLUTION = (2000,2000)
@@ -20,7 +20,10 @@ DEFAULT_QUERY = {
 
 
 
-def google_scrape(stop_func=None,query="long bob hairstyle", folder=Constants.RAW_IMAGES_DIR, img_download_callback=None, hide_browser=HIDE_BROWSER):
+def google_scrape(
+    stop_func=None,query="long bob hairstyle", folder=Constants.RAW_IMAGES_DIR,
+    img_download_callback=None, hide_browser=HIDE_BROWSER
+    ):
     image_scraper = GoogleImageScraper(WEBDRIVER_PATH,"","",SCRAPE_COUNT,hide_browser,MIN_RESOLUTION,MAX_RESOLUTION)
     
     image_scraper.headless = hide_browser
@@ -35,6 +38,12 @@ def hair_scrape(style_dic, clean_queue=None, lock=None):
     if not os.path.isfile(Constants.FINIHSED_RAW_TXT):
         file = open(Constants.FINIHSED_RAW_TXT, 'w')
         file.close()
+        
+    already_scrapped = set()
+    with open(Constants.FINIHSED_RAW_TXT, 'r') as raw_finished_file:
+        for x in raw_finished_file.readlines():
+            line = x.strip()
+            already_scrapped.add(line)
     
     def dwn_callback(img_pth):
         if clean_queue is None:
@@ -43,15 +52,25 @@ def hair_scrape(style_dic, clean_queue=None, lock=None):
     
     for style in style_dic.keys():    
         for style_type in style_dic[style]:
+            # Skip if already scrapped
+            if f'{style}/{style_type}' in already_scrapped:
+                print("Skipping", style, style_type)
+                continue
+            
             # Create folder if it doesnt exist
             output_folder = os.path.join(Constants.RAW_IMAGES_DIR, style, style_type)  
             if not os.path.isdir(output_folder):
                 os.makedirs(output_folder) 
             
             for adds in HAIR_ADDS:
+                print("Scrapinng", style, style_type, adds)
+                
                 query = f"{style_type} {adds}".strip()
                 # Scapes and downloads
-                google_scrape(stop_func=getStop, query=query, folder=output_folder, hide_browser=True, img_download_callback=dwn_callback)
+                google_scrape(
+                    stop_func=getStop, query=query, folder=output_folder,
+                    hide_browser=HIDE_BROWSER, img_download_callback=dwn_callback
+                    )
 
             if lock is None:
                 continue 

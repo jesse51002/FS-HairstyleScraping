@@ -33,7 +33,6 @@ FINIHSED_BODY_BACK_REM_CLEAN_DOWNLOAD = "./data/finished_clean_back_rem_aws_down
 FLICKR_CREDS_FILE = "./flickr_creds"
 
 
-BACKGROUND_REMOVED_NAME = "0background_free"
 DATAFRAME_SAVE_FILE = "./data/clean_image_insights.csv"
 
 # Stop file
@@ -44,7 +43,7 @@ SCRAPE_ADDS = ["", "front profile", "side profile"]
 
 # Process counts
 HAIR_CLEAN_PROCESSES = 1
-HAIR_SCRAPE_PROCESSES = 12
+HAIR_SCRAPE_PROCESSES = 5
 
 BODY_CLEAN_PROCESSES = 6
 BODY_SCRAPE_PROCESSES = 1

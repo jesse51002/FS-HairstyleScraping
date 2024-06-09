@@ -299,7 +299,14 @@ def clean_raw_image(raw_img,
         return None 
     
     if mode == "hair":
-        cleaned_imgs, directions = clean_img(model, raw_img, detect_model=detect_model, res_check=True)
+        cleaned_imgs, directions = clean_img(
+            model, raw_img, 
+            detect_model=detect_model, 
+            body_parser=body_parser, 
+            clip_model=clip_model,
+            res_check=True, 
+            max_faces=1
+        )
     elif mode == "body":
         cleaned_imgs, directions = clean_img(
             model, raw_img, 

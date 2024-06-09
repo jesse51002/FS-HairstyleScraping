@@ -66,6 +66,7 @@ class GoogleImageScraper():
 
                 try:
                     WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "W0wltc"))).click()
+                    driver.set_window_size(1400,1050)
                 except Exception as e:
                     continue
             except Exception as e:
@@ -109,7 +110,10 @@ class GoogleImageScraper():
         missed_count = 0
         indx_1 = 0
         indx_2 = 0
-        search_string = '//*[@id="islrg"]/div[1]/div[%s]/a[1]/div[1]/img'
+        # this is the original string, its... broken search_string = '//*[@id="islrg"]/div[1]/div[%s]/a[1]/div[1]/img'
+        # search_string = '//*[@id="rso"]/div[1]/div[1]/div[1]/div[1]/div[1]/div[%s]//img'
+        search_string = '//*[@data-id="mosaic"]/div[1]/div[%s]//img'
+        
         time.sleep(3)
         while self.number_of_images > count and missed_count < self.max_missed:
             # Exit early if it needs to
@@ -164,7 +168,7 @@ class GoogleImageScraper():
                         t.start()
                         count +=1
                         break
-            except Exception:
+            except Exception as e:
                 print("[INFO] Unable to get link")
 
             try:

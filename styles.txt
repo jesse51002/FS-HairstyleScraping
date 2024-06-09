@@ -7,103 +7,103 @@
 -- half adds {"", half up half down}
 -- thick adds {thin, regular, thick}
 -- gender adds {men, women}
+-- color adds {"black", "brunnete", "blonde", "red", "blue", "orange", "green", "white", "purple", "yellow", "pink", "silver"}
 
 
 ------------------------ Afros -----------------------------
-big afro | gender
-afro | gender
-mini afro | gender
-Afro-textured curls | length
-afro puff 
-afro men | fade
+big afro | gender, color
+afro | gender, color, fade
+mini afro | gender, color
+Afro-textured curls | length, color
+afro puff | color
 
 # double afro puffs and afro space buns are the same thing
-afro space buns
-double afro puffs
+afro space buns | color
+double afro puffs | color
 
 --------------------- Braids/Dreads/Locks -----------------------------
-two strand twists | length, gender
-dreadlocks | length, gender, fade
-butterfly locs | length, gender
-finger coils | length, gender
-Bantu knots 
-rope twist | length, gender
+two strand twists | length, gender, color
+dreadlocks | length, gender, fade, color
+butterfly locs | length, gender, color
+finger coils | length, gender, color
+Bantu knots | color
+rope twist | length, gender, color
 # thin locs
-Sisterlocks | length, gender
+Sisterlocks | length, gender, color
 # nomral locs
-box braids | length, gender
+box braids | length, gender, color
 # thick locs
-jumbo box braids | length, gender
-Goddess braids
-cornrows | gender
-curly locs | length
+jumbo box braids | length, gender, color
+Goddess braids| color
+cornrows | gender, color
+curly locs | length, color
 
 -- Locks Styles
-Space Buns locs
-Bun locs
-Updo locs | gender
-ponytail locs | length, gender
+Space Buns locs | color
+Bun locs | color
+Updo locs | gender, color
+ponytail locs | length, gender, color
 
 
 -- "White" braids
-Dutch braids | length
-Fishtail braids | length
-braided crown | half
+Dutch braids | length, color
+Fishtail braids | length, color
+braided crown | half, color
 
 
 
 ---------------- Women Stuff ----------------------
 -- general
-bob hairstyle | texture, length
-werewolf cut | texture, length
-Mermaid waves | length
-shag woman | texture, length
+bob hairstyle | texture, length, color
+werewolf cut | texture, length, color
+Mermaid waves | length, color
+shag woman | texture, length, color
 
 --Short
-Undercut pixie cut
-Pixie cut | texture
-Curly Mohawk
+Undercut pixie cut | color
+Pixie cut | texture, color
+Curly Mohawk | color
 
 -- curls
-spiral curls | length
-corkscrew curls | length
-Twist out curls | length
-Balayage curls | length
+spiral curls | length, color
+corkscrew curls | length, color
+Twist out curls | length, color
+Balayage curls | length, color
 
 -- ponytails
-Bubble ponytail | length
-Low ponytail | length, texture
-High ponytail | length, texture
+Bubble ponytail | length, color
+Low ponytail | length, texture, color
+High ponytail | length, texture, color
 
 -- bangs
-Blunt bangs | length, texture
-Side swept bangs | length, texture
-Wispy bangs | length, texture
-Baby bangs hairstyle | length, texture
-curtain bangs | texture, length
+Blunt bangs | length, texture, color
+Side swept bangs | length, texture, color
+Wispy bangs | length, texture, color
+Baby bangs hairstyle | length, texture, color
+curtain bangs | texture, length, color
 
 -- Updos
-Messy bun | half
-Chignon | half
-top knot | half
-French twist | half
-space buns | half 
+Messy bun | half, color
+Chignon | half, color
+top knot | half, color
+French twist | half, color
+space buns | half, color 
 
 
 
 ----------------------- Men Styles ----------------------------
-Perm | fade
-mullet | fade
-buzz cut | fade
-Korean Perm men | fade, length
-curtain bangs men | length
-bowl cut | fade
-Block Haircut
-Pompadour | fade
-men side part | fade
-Slicked Back | fade
-Faux Hawk | fade
-Ivy League | fade
-Caesar Cut | fade
-Man Bun
-men modern shag
+Perm | fade, color
+mullet | fade, color
+buzz cut | fade, color
+Korean Perm men | fade, length, color
+curtain bangs men | length, color
+bowl cut | fade, color
+Block Haircut | color
+Pompadour | fade, color
+men side part | fade, color
+Slicked Back | fade, color
+Faux Hawk | fade, color
+Ivy League | fade, color
+Caesar Cut | fade, color
+Man Bun | color
+men modern shag | color

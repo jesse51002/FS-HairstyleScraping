@@ -38,8 +38,7 @@ import Constants
 # Can either be hair or body
 mode = "hair"
 ACCEPT_IMAGE_SIZE = 750
-CLEAN_BACKGROUND_REMOVED_DIR = os.path.join(Constants.CLEAN_BODY_IMAGES_DIR, Constants.BACKGROUND_REMOVED_NAME)
-ACCEPT_BACKGROUND_REMOVED_DIR = os.path.join(Constants.ACCEPTED_BODY_IMAGES_DIR, Constants.BACKGROUND_REMOVED_NAME)
+print("Finished importing libraries")
 
 # Style parser
 # Scapes, cleans and shows cleaned image
@@ -119,7 +118,8 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
         color_image_label.image = img
         
         
-        background_dir = CLEAN_BACKGROUND_REMOVED_DIR if located_in_clean else ACCEPT_BACKGROUND_REMOVED_DIR
+        background_dir = Constants.CLEAN_BODY_BACK_REM_IMAGES_DIR if located_in_clean else Constants.ACCEPT_BODY_BACK_REM_IMAGES_DIR 
+        background_dir = os.path.join(background_dir, pth_list)
         background_image_pth = os.path.join(background_dir, os.path.basename(img_pth))
         if os.path.isfile(background_image_pth):
             back_pil_image = Image.open(background_image_pth).resize((ACCEPT_IMAGE_SIZE, ACCEPT_IMAGE_SIZE),Image.LANCZOS)
@@ -151,9 +151,11 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
         accepted_pth = os.path.join(accepted_dir, os.path.basename(img_pth))
         
         # Gets background removed image save path
-        if not os.path.isdir(ACCEPT_BACKGROUND_REMOVED_DIR):
-            os.makedirs(ACCEPT_BACKGROUND_REMOVED_DIR)
-        back_rm_accept_pth = os.path.join(ACCEPT_BACKGROUND_REMOVED_DIR, os.path.basename(img_pth))
+        accept_back_dir = os.path.join(Constants.ACCEPT_BODY_BACK_REM_IMAGES_DIR, pth_list)
+        if not os.path.isdir(accept_back_dir):
+            os.makedirs(accept_back_dir)
+            
+        back_rm_accept_pth = os.path.join(accept_back_dir, os.path.basename(img_pth))
         
         while not getStop():
             key = None
@@ -173,7 +175,7 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
                     os.rename(img_pth, accepted_pth)
                     
                     if background_image_pth is not None:
-                        if os.path.isfile(back_rm_accept_pth):
+                        if os.path.isfile(back_rm_accept_pth) and background_image_pth != back_rm_accept_pth:
                             os.remove(back_rm_accept_pth)
                         os.rename(background_image_pth, back_rm_accept_pth)
                     

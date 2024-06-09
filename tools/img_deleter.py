@@ -16,6 +16,14 @@ while True:
         
         if os.path.isfile(img_pth):
             os.remove(img_pth)
-            print("Removed:", img_pth)
+            print("Removed base:", img_pth)
+            
+    for dir in os.listdir(Constants.ACCEPT_BODY_BACK_REM_IMAGES_DIR):
+        
+        img_pth = os.path.join(Constants.ACCEPT_BODY_BACK_REM_IMAGES_DIR, dir, delete)
+        
+        if os.path.isfile(img_pth):
+            os.remove(img_pth)
+            print("Removed background free:", img_pth)
     
     

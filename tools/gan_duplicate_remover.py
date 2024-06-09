@@ -119,7 +119,7 @@ for folder in folder_order:
             
             path = os.path.join(root, filename)
     
-            if ".ipynb_checkpoints" in path or Constants.BACKGROUND_REMOVED_NAME in path:
+            if ".ipynb_checkpoints" in path:
                 continue
     
             is_duplicate = True
