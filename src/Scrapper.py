@@ -13,7 +13,7 @@ HIDE_BROWSER = False
 MIN_RESOLUTION = (500,700)
 MAX_RESOLUTION = (2000,2000)
 
-HAIR_ADDS = ["", "front profile", "side profile"]
+HAIR_ADDS = [""] # ["", "front profile", "side profile"]
 
 DEFAULT_QUERY = {
     "long bob hairstyle": ["short long bob hairstyle", "medium length long bob hairstyle", "long long bob hairstyle"]
@@ -53,11 +53,6 @@ def hair_scrape(style_dic, clean_queue=None, lock=None):
     
     for style in style_dic.keys():    
         for style_type in style_dic[style]:
-            # Skip if already scrapped
-            if f'{style}/{style_type}' in already_scrapped:
-                print("Skipping", style, style_type)
-                continue
-            
             # Create folder if it doesnt exist
             output_folder = os.path.join(Constants.RAW_IMAGES_DIR, style, style_type)  
             
