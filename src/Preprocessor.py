@@ -369,12 +369,9 @@ def Preprocess(clean_queue, accept_queue,
     
     detect_model = detection_model()
     
-    
     if mode == "body":
         body_parser = body_model()
-        
         clip_model = Clip()
-
     else:
         body_parser = None
         clip_model = None

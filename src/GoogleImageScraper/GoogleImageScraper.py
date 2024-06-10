@@ -186,7 +186,7 @@ class GoogleImageScraper():
         print("[INFO] Google search ended")
         return image_urls
 
-    def save_images(self,image_urls, force_idx=None, keep_filenames=True):
+    def save_images(self,image_urls, force_idx=None, keep_filenames=False):
         #save images into file directory
         """
             This function takes in an array of image urls and save it into the given image path/directory.
@@ -214,7 +214,7 @@ class GoogleImageScraper():
                                 filename = "%s.%s"%(name,image_from_web.format.lower())
                             else:
                                 chosen_idx = indx if force_idx is None else force_idx
-                                filename = "%s%s.%s"%(search_string,str(chosen_idx),image_from_web.format.lower())
+                                filename = "{0:0>5}.{1}".format(chosen_idx, image_from_web.format.lower())
 
                             image_path = os.path.join(self.image_path, filename)
                             # print(f"[INFO] {self.search_key} \t {indx} \t Image saved at: {image_path}")

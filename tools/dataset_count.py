@@ -17,12 +17,7 @@ if __name__ == "__main__":
         chosen = int(input())
         
 
-        if chosen >= 1 or chosen <= 2:
-            print(f"""
-            You have picked option {chosen}, are sure this action is irreversible\n
-            Type 'confirm' to proceed
-            """)
-        else:
+        if chosen < 1 or chosen > 2:
             print(f"{chosen} is an invalid choice, pick a valid choice")
             
     if chosen == 1:

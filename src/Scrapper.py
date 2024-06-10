@@ -1,4 +1,5 @@
 import os
+import shutil
 from GoogleImageScraper.GoogleImageScraper import GoogleImageScraper
 from GoogleImageScraper.patch import webdriver_executable
 from Utils import getStop
@@ -7,7 +8,7 @@ import Constants
 
 WEBDRIVER_PATH = os.path.normpath(os.path.join(os.getcwd(), "src", "GoogleImageScraper", 'webdriver', webdriver_executable()))
 
-SCRAPE_COUNT = 1000
+SCRAPE_COUNT = 500
 HIDE_BROWSER = False
 MIN_RESOLUTION = (500,700)
 MAX_RESOLUTION = (2000,2000)
@@ -59,8 +60,11 @@ def hair_scrape(style_dic, clean_queue=None, lock=None):
             
             # Create folder if it doesnt exist
             output_folder = os.path.join(Constants.RAW_IMAGES_DIR, style, style_type)  
-            if not os.path.isdir(output_folder):
-                os.makedirs(output_folder) 
+            
+            if os.path.isdir(output_folder):
+                shutil.rmtree(output_folder)
+                
+            os.makedirs(output_folder) 
             
             for adds in HAIR_ADDS:
                 print("Scrapinng", style, style_type, adds)
