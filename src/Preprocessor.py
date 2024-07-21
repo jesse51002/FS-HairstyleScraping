@@ -9,7 +9,7 @@ import numpy as np
 
 from HumanParsing.segment import body_model
 from Detection import detection_model
-from Clip import Clip
+from Clip import Clip, HairClip
 import Constants
 
 SIZE_FACE_MULT = 3.5
@@ -70,7 +70,14 @@ def get_directional_scale(w, h):
     return results
 
 
-def crop_image(img, detect_model :detection_model, res_check=True, visualize=False, bottom_extend=False, max_faces=None):
+def crop_image(
+    img,
+    detect_model :detection_model,
+    res_check=True,
+    visualize=False,
+    bottom_extend=False,
+    max_faces=None
+    ):
     # Detect faces
     faces = detect_model.inference(img)
 
@@ -169,9 +176,14 @@ def crop_image(img, detect_model :detection_model, res_check=True, visualize=Fal
     return bounded_images, angle_images
         
 
-def clip_cleaner(img, clip_model):
+def clip_cleaner(
+    img: np.ndarray, 
+    clip_model
+    ):
     probs_dic = clip_model.inference(img)
     keep_image = probs_dic["Quality"][0, 0] >= 0.5 and probs_dic["Human"][0, 0] >= 0.5
+    if "Advertisement" in probs_dic:
+        keep_image = keep_image and probs_dic["Advertisement"][0, 0] > 0.4
     return keep_image, probs_dic
 
 def clean_img(model, path, detect_model: detection_model,
@@ -362,7 +374,7 @@ def clean_raw_image(raw_img,
     # Preprocessor
 def Preprocess(clean_queue, accept_queue, 
                root_clean_dir, root_raw_dir, 
-               mode="hair", delete_raw=True):    
+               mode="hair"):    
     # Create model
     # Weights are automatically downloaded
     model = SixDRepNet()
@@ -374,7 +386,7 @@ def Preprocess(clean_queue, accept_queue,
         clip_model = Clip()
     else:
         body_parser = None
-        clip_model = None
+        clip_model = HairClip()
     
     # Loop until errors out from timeout (nothing more to clean)
     while True:

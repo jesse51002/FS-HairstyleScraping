@@ -12,7 +12,8 @@ ATTRIBUTES = {
     "half": ["", "half up" "half down"],
     "thick": ["thin", "regular", "thick"],
     "gender": ["men", "women"],
-    "color": ["black", "brunnete", "blonde", "red", "blue", "orange", "green", "white", "purple", "yellow", "pink", "silver"]
+    "color": ["black", "brunnete", "blonde", "red", "blue", "orange", "green", "white", "purple", "yellow", "pink", "silver"],
+    "color_dataset": ["afro", "curly", "wavy", "straight", "braids dreads", "men"]
 }
 
 POSTFIX_ATTR = ["gender", "half"]

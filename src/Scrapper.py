@@ -8,7 +8,7 @@ import Constants
 
 WEBDRIVER_PATH = os.path.normpath(os.path.join(os.getcwd(), "src", "GoogleImageScraper", 'webdriver', webdriver_executable()))
 
-SCRAPE_COUNT = 500
+SCRAPE_COUNT = 2000
 HIDE_BROWSER = False
 MIN_RESOLUTION = (500,700)
 MAX_RESOLUTION = (2000,2000)

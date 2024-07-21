@@ -8,7 +8,7 @@
 -- thick adds {thin, regular, thick}
 -- gender adds {men, women}
 -- color adds {"black", "brunnete", "blonde", "red", "blue", "orange", "green", "white", "purple", "yellow", "pink", "silver"}
-
+-- color_dataset adds {"afro", "curly", "wavy", "straight", "braids", "dreads", "men"}
 
 ------------------------ Afros -----------------------------
 big afro | gender
@@ -79,7 +79,7 @@ High ponytail | length, texture
 Blunt bangs | length, texture
 Side swept bangs | length, texture
 Wispy bangs | length, texture
-Baby bangs hairstyle | lengthtexture
+Baby bangs hairstyle | length, texture
 curtain bangs | texture, length
 
 -- Updos
@@ -107,3 +107,18 @@ Ivy League | fade
 Caesar Cut | fade
 Man Bun
 men modern shag
+
+
+------------------------ Colors Dataset ------------------------------
+black hairstyle | color_dataset
+brunnete hairstyle | color_dataset
+blonde hairstyle | color_dataset
+red hairstyle | color_dataset
+blue hairstyle | color_dataset
+orange hairstyle | color_dataset
+green hairstyle | color_dataset
+white hairstyle | color_dataset
+purple hairstyle | color_dataset
+yellow hairstyle | color_dataset
+pink hairstyle | color_dataset
+silver hairstyle | color_dataset

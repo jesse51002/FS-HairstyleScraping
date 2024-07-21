@@ -127,7 +127,8 @@ def split_hair_dict(hair_dict: dict, count : int):
     
     flattened_dict_arr: list[tuple[str, str]] = []
     for key in hair_dict.keys():
-        flattened_dict_arr.append((key, hair_dict[key]))
+        for value in hair_dict[key]:
+            flattened_dict_arr.append((key, value))
   
     split_dicts = [{} for _ in range(count)]
     
