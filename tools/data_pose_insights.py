@@ -26,13 +26,19 @@ def get_pose_acceptance(img_pth, pose_inferencer):
     
     pose = pose_inferencer.index_to_dic(pose_inferencer.inference(img)[0]["keypoints"])
     
-    hand_max = max(pose["right_shoulder"][1], pose["left_shoulder"][1]) + 100
+    hand_max = max(
+        pose["right_shoulder"][1] if pose["right_shoulder"][2] > CONFIDENCE else 0, 
+        pose["left_shoulder"][1] if pose["left_shoulder"][2] > CONFIDENCE else 0
+        )
+    
+    elbow_offset = 50
+    hand_offset = 100
     
     hand_lowered = (
-        (pose["left_elbow"][1] > hand_max or pose["left_elbow"][2] < CONFIDENCE) and
-        (pose["left_hand"][1] > hand_max or pose["left_hand"][2] < CONFIDENCE)  and
-        (pose["right_elbow"][1] > hand_max or pose["right_elbow"][2] < CONFIDENCE)  and
-        (pose["right_hand"][1] > hand_max or pose["right_hand"][2] < CONFIDENCE) 
+        (pose["left_elbow"][1] > hand_max + elbow_offset or pose["left_elbow"][2] < CONFIDENCE) and
+        (pose["left_hand"][1] > hand_max + hand_offset or pose["left_hand"][2] < CONFIDENCE)  and
+        (pose["right_elbow"][1] > hand_max + elbow_offset or pose["right_elbow"][2] < CONFIDENCE)  and
+        (pose["right_hand"][1] > hand_max + hand_offset or pose["right_hand"][2] < CONFIDENCE) 
     )
     
     return hand_lowered
@@ -115,7 +121,10 @@ def create_pose_insights():
             json.dump(output_dict, f, indent=2)
             
         for img_pth in rejected_list:
-            os.rename(img_pth, os.path.join(REJECTED_DIR, os.path.basename(img_pth)))
+            rej_pth = os.path.join(REJECTED_DIR, os.path.basename(img_pth))
+            if os.path.isfile(rej_pth):
+                os.remove(rej_pth)
+            os.rename(img_pth, rej_pth)
 
 if __name__ == "__main__":
     create_pose_insights()
