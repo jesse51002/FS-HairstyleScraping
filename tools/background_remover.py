@@ -5,6 +5,7 @@ sys.path.insert(0, './src')
 import cv2
 import numpy as np
 import torch
+import boto3
 
 import shutil
 from p3m_matting.inference import remove_background
@@ -13,11 +14,14 @@ from aws_s3_downloader import download_aws_folder, get_download_folders
 from aws_s3_uploader import upload_aws_folder
 
 TARGET_BACKGROUND_DIR = Constants.CLEAN_BODY_BACK_REM_IMAGES_DIR
-BATCH_SIZE = 3
+BATCH_SIZE = 4
 TARGET_SIZE = 1024
 root_dir = Constants.CLEAN_BODY_IMAGES_DIR
 
 AWS_CLEAN_ROOT_KEY = Constants.CLEAN_BODY_BACK_REM_IMAGES_DIR.split("/")[-1] + "/"
+
+s3resource = boto3.client('s3')
+BUCKET_NAME = "fs-upper-body-gan-dataset"
 
 
 def remove_images_background():
@@ -47,9 +51,17 @@ def remove_images_background():
 
     folders_to_anaylze = list(folders_to_anaylze)
     for folder_num, folder in enumerate(folders_to_anaylze):
-        print("Removing background from", folder)
         folder_path = os.path.join(root_dir, folder)
-    
+
+        back_rem_key = os.path.join(AWS_CLEAN_ROOT_KEY, folder)
+
+        try:
+            s3resource.get_object(Bucket=BUCKET_NAME, Key=back_rem_key + ".zip")
+            print(back_rem_key, "already exists")
+            continue
+        except Exception as e:
+            print("Removing background from", folder)
+        
         folder_downloaded = False
         if not os.path.isdir(folder_path):
             key = rel_base + folder + ".zip"
@@ -93,7 +105,7 @@ def remove_images_background():
         if folder_downloaded:
             shutil.rmtree(folder_path)
 
-        upload_aws_folder(back_rem_dir, os.path.join(AWS_CLEAN_ROOT_KEY, folder))
+        upload_aws_folder(back_rem_dir, back_rem_key)
         shutil.rmtree(back_rem_dir)
             
         print(f"Finished doing folder {folder_num + 1}/{len(folders_to_anaylze)}")

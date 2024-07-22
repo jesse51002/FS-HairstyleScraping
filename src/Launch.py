@@ -1,5 +1,7 @@
 import json
 import os
+os.environ["CRYPTOGRAPHY_OPENSSL_NO_LEGACY"] = "1"
+
 try:
     import tkinter
     from tkinter import *
@@ -25,7 +27,7 @@ import numpy as np
 import torch
 
 
-from Preprocessor import Preprocess
+from Preprocessor import Preprocess, raw_body_image_downloader
 from Utils import setStopFile, getStop, find_images, \
     split_hair_dict, get_file_path, delete_empty, split_body_arr, get_gan_data_priorty_list
 from Querys import get_queries, create_body_queries
@@ -180,7 +182,7 @@ def parse_style(accept_queue : Queue, root_clean_dir : str, root_accepted_dir : 
                 previous_accepted_stack.insert(0, accepted_pth)
                 accept_count += 1
                 print("Accepted a total of", accept_count)
-                break             
+                break
             # If rejected delete the image
             elif key == "R" or key == "r":
                 os.remove(img_pth)
@@ -299,7 +301,6 @@ def launch():
             scrape_processes_count = Constants.BODY_SCRAPE_PROCESSES
             clean_processes_count = Constants.BODY_CLEAN_PROCESSES
 
-
         should_scrape = chosen <= 2 or chosen == 3
         should_clean = chosen <= 2 or chosen == 4
 
@@ -316,12 +317,17 @@ def launch():
             for img in raw_images:
                 clean_queue.put(img)
             print(f"Instantiates clean queue with {len(raw_images)} raw images")
+
+            if mode == "body":
+                raw_folder_downloader_process = Process(target=raw_body_image_downloader, args=(clean_queue,))
+                raw_folder_downloader_process.start()
+                clean_processes.append(raw_folder_downloader_process)
             
-            for _ in range(clean_processes_count):
+            for i in range(clean_processes_count):
                 # preprocesses
                 clean_process = Process(target=Preprocess, args=(clean_queue, accept_queue, root_clean_dir, root_raw_dir, mode))
                 clean_process.start()
-                clean_processes.append(clean_process) 
+                clean_processes.append(clean_process)
             
 
     if chosen == 1 or chosen == 5:

@@ -1,0 +1,5 @@
+export CRYPTOGRAPHY_OPENSSL_NO_LEGACY=1
+python tools/gan_duplicate_remover.py
+python tools/background_remover.py
+python tools/aws_s3_uploader.py
+

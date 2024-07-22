@@ -148,7 +148,7 @@ def create_insights_pandas():
             continue
         folder_name = dataframe.loc[i, "ImagePath"].split("/")[-2]
         already_done_folders.add(folder_name)
-    S
+    
     rel_base = root_dir.split("/")[-1] + "/"
 
     folders_to_anaylze = []

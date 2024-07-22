@@ -1,8 +1,12 @@
+import sys
+sys.path.insert(0, './tools')
+
 import os
 import cv2
 import time
 import math
-from Utils import getStop, get_file_path
+import torch
+from Utils import getStop, get_file_path, find_images
 from sixdrepnet import SixDRepNet
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,6 +15,9 @@ from HumanParsing.segment import body_model
 from Detection import detection_model
 from Clip import Clip
 import Constants
+
+from aws_s3_downloader import download_aws_folder, get_download_folders
+from threading import Thread, Lock
 
 SIZE_FACE_MULT = 3.5
 ANGLE_FACE_MULT = 2
@@ -185,6 +192,7 @@ def clean_img(model, path, detect_model: detection_model,
               body_width_contain=True,  # Whole body width must be contained inside the image bounds
               reject_greyscale=True,  # Rejects greyscale images
               downscale_big=True,  # Downscales Images that are to big
+              get_direction=False
               ):
     
     try:
@@ -207,7 +215,7 @@ def clean_img(model, path, detect_model: detection_model,
     # makes sure the width of the body is contained in the image
     if body_parser is not None and body_width_contain:
         segmentation, _ = body_parser.inference(raw_img)
-        segmentation = segmentation.cpu().numpy()[0]
+        segmentation = segmentation[0]
         
         test_area = np.stack([segmentation[:, :5], segmentation[:, -5:]], axis=1)
         
@@ -224,6 +232,7 @@ def clean_img(model, path, detect_model: detection_model,
             print("Body top is not contained in the image... Rejected")
             return None, None
 
+    
     if clip_model is not None:
         keep_image, _ = clip_cleaner(raw_img, clip_model)
 
@@ -242,24 +251,24 @@ def clean_img(model, path, detect_model: detection_model,
     for i in range(len(imgs)):
         img = imgs[i]
         angle_image = angle_images[i]
-        
-        pitch, yaw, roll = model.predict(angle_image)
-        if visualize:
-            print(pitch, yaw, roll)
-        
+
         # Finds valid angle that hte image fits
         valid_direction = None
-        
-        # Checks the validity of the picture face angle based on the given direction
-        for direction in ALLOWED_ANGLES:
-            if abs(pitch[0]) < ALLOWED_ANGLES[direction][0, 0] or abs(pitch[0]) > ALLOWED_ANGLES[direction][0, 1]:
-                continue
-            if abs(yaw[0]) < ALLOWED_ANGLES[direction][1, 0] or abs(yaw[0]) > ALLOWED_ANGLES[direction][1, 1]:
-                continue
-            if abs(roll[0]) < ALLOWED_ANGLES[direction][2, 0] or abs(roll[0]) > ALLOWED_ANGLES[direction][2, 1]:
-                continue
-            valid_direction = direction
-            break
+        if model is not None:
+            pitch, yaw, roll = model.predict(angle_image)
+            if visualize:
+                print(pitch, yaw, roll)
+            
+            # Checks the validity of the picture face angle based on the given direction
+            for direction in ALLOWED_ANGLES:
+                if abs(pitch[0]) < ALLOWED_ANGLES[direction][0, 0] or abs(pitch[0]) > ALLOWED_ANGLES[direction][0, 1]:
+                    continue
+                if abs(yaw[0]) < ALLOWED_ANGLES[direction][1, 0] or abs(yaw[0]) > ALLOWED_ANGLES[direction][1, 1]:
+                    continue
+                if abs(roll[0]) < ALLOWED_ANGLES[direction][2, 0] or abs(roll[0]) > ALLOWED_ANGLES[direction][2, 1]:
+                    continue
+                valid_direction = direction
+                break
         
         if downscale_big:
             if img.shape[0] > MAX_QUALITY:
@@ -299,7 +308,7 @@ def clean_raw_image(raw_img,
         return None 
     
     if mode == "hair":
-        cleaned_imgs, directions = clean_img(model, raw_img, detect_model=detect_model, res_check=True)
+        cleaned_imgs, directions = clean_img(model, raw_img, detect_model=detect_model, res_check=True, get_direction=True)
     elif mode == "body":
         cleaned_imgs, directions = clean_img(
             model, raw_img, 
@@ -312,7 +321,7 @@ def clean_raw_image(raw_img,
         )
 
     # Removes the raw img after it is cleaned
-    if delete_raw:   
+    if delete_raw:
         os.remove(raw_img)
                 
     # If image was not accepted continue
@@ -352,20 +361,78 @@ def clean_raw_image(raw_img,
     return cleaned_pths
 
 
-    # Preprocessor
-def Preprocess(clean_queue, accept_queue, 
-               root_clean_dir, root_raw_dir, 
-               mode="hair", delete_raw=True):    
+def raw_body_image_downloader(clean_queue):
+    root_dir = Constants.RAW_BODY_IMAGES_DIR
+    completed_download_file = Constants.FINIHSED_BODY_RAW_DOWNLOAD
+
+    rel_base = root_dir.split("/")[-1] + "/"
+
+    folders_to_anaylze = []
+    
+    # Adds folders on local
+    folders_to_anaylze += os.listdir(root_dir)
+    
+    # Adds folders in AWS S3
+    s3_folders = get_download_folders(rel_base)
+    for i in range(len(s3_folders)):
+        s3_folders[i] = s3_folders[i].split("/")[-1][:-4]
+    folders_to_anaylze += s3_folders
+
+    # Removes duplicates
+    folders_to_anaylze = set(folders_to_anaylze)
+
+    # Creates file if it doesnt exist
+    if not os.path.isfile(completed_download_file):
+        file = open(completed_download_file, 'w')
+        file.close()
+
+    already_done = []
+    # Instanties the finihsed folders from file
+    with open(completed_download_file, 'r') as file:
+        for x in file.readlines():
+            line = x.strip()
+            if len(line) == 0:
+                continue
+            already_done.append(line.replace("\\", "/").split("/")[-1])
+    already_done = set(already_done)
+
+    folders_to_anaylze -= set(already_done)
+
+    file_lock = Lock()
+    
+    for folder in folders_to_anaylze:
+        while len(find_images(Constants.RAW_BODY_IMAGES_DIR)) > 5000:
+            time.sleep(60)
+
+        folder_path = os.path.join(Constants.RAW_BODY_IMAGES_DIR, folder)
+        key = rel_base + folder + ".zip"
+        print("Downloading", key)
+        try:
+            zip_process_thread = download_aws_folder(folder_path, key, finished_download_file=completed_download_file, file_lock=file_lock)
+            zip_process_thread.join()
+    
+            for img_name in os.listdir(folder_path):
+                img_pth = os.path.join(folder_path, img_name)
+                clean_queue.put(img_pth)
+        except Exception as e:
+            print("Download Failed:", e)
+
+
+# Preprocessor
+def Preprocess(clean_queue, accept_queue,
+               root_clean_dir, root_raw_dir,
+               mode="hair", delete_raw=True):
+
+    torch.cuda.empty_cache()
+    
     # Create model
     # Weights are automatically downloaded
-    model = SixDRepNet()
+    model = SixDRepNet() if mode == "hair" else None
     
     detect_model = detection_model()
     
-    
     if mode == "body":
         body_parser = body_model()
-        
         clip_model = Clip()
 
     else:
@@ -379,7 +446,11 @@ def Preprocess(clean_queue, accept_queue,
             return
         
         # Gets image and cleans it
-        raw_img = clean_queue.get(timeout=60)
+        try:
+            raw_img = clean_queue.get(timeout=120)
+        except Exception as e:
+            return
+            
         if not os.path.isfile(raw_img):
             continue
         
@@ -394,8 +465,9 @@ def Preprocess(clean_queue, accept_queue,
         # Adds to the queue for acceptance
         if accept_queue is not None:
             for final_pth in final_pths:
-                accept_queue.put(final_pth)    
-  
+                accept_queue.put(final_pth)
+
+
 if __name__ == "__main__":
     # Create model
     # Weights are automatically downloaded

@@ -37,7 +37,7 @@ BACKGROUND_REMOVED_NAME = "0background_free"
 DATAFRAME_SAVE_FILE = "./data/clean_image_insights.csv"
 
 # Stop file
-STOP_FILE  = "stop.json"
+STOP_FILE = "stop.json"
 
 SCRAPE_ADDS = ["", "front profile", "side profile"]
 

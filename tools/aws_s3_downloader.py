@@ -40,7 +40,7 @@ def zip_parser(abs_folder_path, zip_file, finished_download_file=None, file_lock
     print(f"Finsihed parsing {abs_folder_path}")
 
 
-def download_aws_folder(abs_folder_path, s3_key, finished_download_file=None, file_lock=None, thread_zip_parse=True):
+def download_aws_folder(abs_folder_path, s3_key, finished_download_file=None, file_lock=None):
     if not os.path.isdir(abs_folder_path):
         os.makedirs(abs_folder_path)
     
@@ -100,7 +100,8 @@ def download_from_aws(split_dir, completed_download_file=None):
     rel_base = split_dir.split("/")[-1] + "/"
     
     download_folders = get_download_folders(rel_base, completed_download_file)
-
+    print(download_folders)
+    
     threads = []
 
     file_lock = Lock()

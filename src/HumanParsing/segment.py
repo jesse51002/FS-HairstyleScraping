@@ -82,8 +82,8 @@ class body_model(Model):
             h, w = img.shape[-2:]
         else:
             raise TypeError
-        
-        max_shape = max(h,w)
+
+        max_shape = max(h, w)
         if max_shape > self.max_size:
             scale_reduce = self.max_size / max_shape
             
@@ -91,14 +91,16 @@ class body_model(Model):
             
             img = downsample(img)
         
-        img = self.transform(img/ 255).cuda()
+        img = self.transform(img / 255).cuda()
         
         parsing_output = self.model(img)
-        parsing_output = parsing_output[0][-1]
+        parsing_output = parsing_output[0][-1].detach().cpu()
+
+        scale_num = 1024 / max(parsing_output.shape[2:])
         
-        interp = torch.nn.Upsample(size=[h,w], mode='bilinear', align_corners=True)
+        interp = torch.nn.Upsample(scale_factor=scale_num, mode='bilinear', align_corners=True)
+
         output_perc = interp(parsing_output)
-        
         output = output_perc.argmax(dim=1)
         
         # output[output_perc[:,0] >= BACKGROUND_PRIORITY] = 0
