@@ -167,9 +167,6 @@ def create_insights_pandas():
     
     total_images_done = 0
     for folder in folders_to_anaylze:
-        if Constants.BACKGROUND_REMOVED_NAME in folder:
-            continue
-    
         print("Getting insights from", folder)
         folder_path = os.path.join(root_dir, folder)
         folder_downloaded = False

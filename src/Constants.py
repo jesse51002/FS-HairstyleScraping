@@ -20,7 +20,7 @@ RAW_BODY_IMAGES_DIR = "./data/raw_images"
 CLEAN_BODY_IMAGES_DIR = "./data/clean_images"
 CLEAN_BODY_BACK_REM_IMAGES_DIR = "./data/clean_images_background_removed"
 ACCEPTED_BODY_IMAGES_DIR = "./data/accepted_images"
-ACCEPT_BODY_BACK_REM_IMAGES_DIR = "./data/accept_images_background_removed"
+ACCEPT_BODY_BACK_REM_IMAGES_DIR = "./data/accepted_images_background_removed"
 
 FINIHSED_BODY_RAW_TXT = "./data/finished_raw"
 FINIHSED_BODY_RAW_UPLOAD = "./data/finished_raw_aws_upload"
@@ -33,7 +33,6 @@ FINIHSED_BODY_BACK_REM_CLEAN_DOWNLOAD = "./data/finished_clean_back_rem_aws_down
 FLICKR_CREDS_FILE = "./flickr_creds"
 
 
-BACKGROUND_REMOVED_NAME = "0background_free"
 DATAFRAME_SAVE_FILE = "./data/clean_image_insights.csv"
 
 # Stop file
@@ -44,7 +43,7 @@ SCRAPE_ADDS = ["", "front profile", "side profile"]
 
 # Process counts
 HAIR_CLEAN_PROCESSES = 1
-HAIR_SCRAPE_PROCESSES = 12
+HAIR_SCRAPE_PROCESSES = 6
 
 BODY_CLEAN_PROCESSES = 6
 BODY_SCRAPE_PROCESSES = 1

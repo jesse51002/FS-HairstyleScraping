@@ -11,14 +11,17 @@ ATTRIBUTES = {
     "fade": ["", "low fade", "mid fade", "high fade"],
     "half": ["", "half up" "half down"],
     "thick": ["thin", "regular", "thick"],
-    "gender": ["men", "women"]
+    "gender": ["men", "women"],
+    "color": ["black", "brunnete", "blonde", "red", "blue", "orange", "green", "white", "purple", "yellow", "pink", "silver"],
+    "color_dataset": ["afro", "curly", "wavy", "straight", "braids dreads", "men"]
 }
 
 POSTFIX_ATTR = ["gender", "half"]
 
 EXTRA_TAGS = [
     "canon", "fujifilm", "nikon", "sony", "panasonic", "olympus", "pentax",
-    "curly", "braids", "dreads", "wavy", "suit"
+    "curly", "braids", "dreads", "wavy", "suit",  
+    "photography", "guy", "woman", "lady", "fashion"
     ]
 
 

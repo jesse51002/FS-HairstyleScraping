@@ -93,7 +93,7 @@ def get_download_folders(prefix="", completed_download_file=None):
                 
 def download_from_aws(split_dir, completed_download_file=None):
     # Creates file if it doesnt exist
-    if not os.path.isfile(completed_download_file):
+    if completed_download_file is not None and not os.path.isfile(completed_download_file):
         file = open(completed_download_file, 'w')
         file.close()
 
@@ -118,15 +118,16 @@ def download_from_aws(split_dir, completed_download_file=None):
 
 if __name__ == "__main__":
     chosen = -1
-    while chosen < 1 or chosen > 2:
+    while chosen < 1 or chosen > 3:
         print("""
         Choose download mode
         1. Raw
         2. Clean
+        3. Accepted
         """)
         chosen = int(input())
 
-        if chosen >= 1 or chosen <= 2:
+        if chosen >= 1 or chosen <= 3:
             print(f"""
             You have picked option {chosen}, are sure this action is irreversible\n
             Type 'confirm' to proceed
@@ -144,4 +145,8 @@ if __name__ == "__main__":
     elif chosen == 2:
         download_from_aws(Constants.CLEAN_BODY_IMAGES_DIR, completed_download_file=Constants.FINIHSED_BODY_CLEAN_DOWNLOAD)
         download_from_aws(Constants.CLEAN_BODY_BACK_REM_IMAGES_DIR, completed_download_file=Constants.FINIHSED_BODY_BACK_REM_CLEAN_DOWNLOAD)
+    elif chosen == 3:
+        download_from_aws(Constants.ACCEPT_BODY_BACK_REM_IMAGES_DIR)
+    else:
+        raise Exception("Invalid choice")
     

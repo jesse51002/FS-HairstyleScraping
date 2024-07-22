@@ -66,6 +66,7 @@ class GoogleImageScraper():
 
                 try:
                     WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "W0wltc"))).click()
+                    driver.set_window_size(1400,1050)
                 except Exception as e:
                     continue
             except Exception as e:
@@ -109,7 +110,10 @@ class GoogleImageScraper():
         missed_count = 0
         indx_1 = 0
         indx_2 = 0
-        search_string = '//*[@id="islrg"]/div[1]/div[%s]/a[1]/div[1]/img'
+        # this is the original string, its... broken search_string = '//*[@id="islrg"]/div[1]/div[%s]/a[1]/div[1]/img'
+        # search_string = '//*[@id="rso"]/div[1]/div[1]/div[1]/div[1]/div[1]/div[%s]//img'
+        search_string = '//*[@data-id="mosaic"]/div[1]/div[%s]//img'
+        
         time.sleep(3)
         while self.number_of_images > count and missed_count < self.max_missed:
             # Exit early if it needs to
@@ -164,7 +168,7 @@ class GoogleImageScraper():
                         t.start()
                         count +=1
                         break
-            except Exception:
+            except Exception as e:
                 print("[INFO] Unable to get link")
 
             try:
@@ -182,7 +186,7 @@ class GoogleImageScraper():
         print("[INFO] Google search ended")
         return image_urls
 
-    def save_images(self,image_urls, force_idx=None, keep_filenames=True):
+    def save_images(self,image_urls, force_idx=None, keep_filenames=False):
         #save images into file directory
         """
             This function takes in an array of image urls and save it into the given image path/directory.
@@ -210,7 +214,7 @@ class GoogleImageScraper():
                                 filename = "%s.%s"%(name,image_from_web.format.lower())
                             else:
                                 chosen_idx = indx if force_idx is None else force_idx
-                                filename = "%s%s.%s"%(search_string,str(chosen_idx),image_from_web.format.lower())
+                                filename = "{0:0>5}.{1}".format(chosen_idx, image_from_web.format.lower())
 
                             image_path = os.path.join(self.image_path, filename)
                             # print(f"[INFO] {self.search_key} \t {indx} \t Image saved at: {image_path}")

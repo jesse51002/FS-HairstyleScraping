@@ -3,6 +3,9 @@ import cv2
 import torch
 import clip
 
+from numpy import dot
+from numpy.linalg import norm
+
 from Model import Model
 
 
@@ -25,15 +28,6 @@ class Clip(Model):
             # "blurry, greyscale, waterpainting, black and white",
             "doll, barbie, toy, 3D render, blender, digital art"
         ]).cuda()
-
-        self.hair_type = clip.tokenize([
-            "braids and dreads", "afro hair", "curly hair", "wavy hair", "straight hair"
-        ]).cuda()
-
-        self.hair_color = clip.tokenize([
-            "black hair", "dyed hair"
-        ]).cuda()
-        
         
            
     def inference(self, img):
@@ -50,7 +44,73 @@ class Clip(Model):
             logits_per_image, logits_per_text = self.model(image, self.human_text)
             human_probs = logits_per_image.softmax(dim=-1).cpu().numpy()
 
-        return {"Quality": quality_probs, "Human": human_probs}
+        return {
+            "Quality": quality_probs, 
+            "Human": human_probs
+            }
+
+class HairClip(Model):
+    
+    def __init__(self):
+        # load model
+        self.model, self.preprocess = clip.load("ViT-B/16", device="cpu")
+        self.model = self.model.cuda()
+        
+        # Quality tokenizer
+        self.quality_text = clip.tokenize([
+            "HD, canon, 8k, high quality, photo",
+            # "blurry, greyscale, waterpainting, black and white",
+            "water color, painting, blurry, greyscale, waterpainting, black and white, low quality"
+        ]).cuda()
+    
+        self.human_text = clip.tokenize([
+            "human, man, woman, boy, girl, kid, baby",
+            # "blurry, greyscale, waterpainting, black and white",
+            "doll, barbie, toy, 3D render, blender, digital art"
+        ]).cuda()
+        
+        self.advertisement_text = clip.tokenize([
+            "high quality portrait",
+            # "blurry, greyscale, waterpainting, black and white",
+            "advertisment"
+        ]).cuda()
+        
+           
+    def inference(self, img):
+        image = self.preprocess(Image.fromarray(img)).unsqueeze(0).cuda()
+    
+        with torch.no_grad():
+            self.model.encode_image(image)
+            
+            self.model.encode_text(self.quality_text)
+            logits_per_image, logits_per_text = self.model(image, self.quality_text)
+            quality_probs = logits_per_image.softmax(dim=-1).cpu().numpy()
+    
+            self.model.encode_text(self.human_text)
+            logits_per_image, logits_per_text = self.model(image, self.human_text)
+            human_probs = logits_per_image.softmax(dim=-1).cpu().numpy()
+            
+            self.model.encode_text(self.advertisement_text)
+            logits_per_image, logits_per_text = self.model(image, self.advertisement_text)
+            advertisement_probs = logits_per_image.softmax(dim=-1).cpu().numpy()
+
+        return {
+            "Quality": quality_probs, 
+            "Human": human_probs,
+            "Advertisement": advertisement_probs
+            }
+        
+class EmbeddingClip(Model):
+    
+    def __init__(self):
+        # load model
+        self.model, self.preprocess = clip.load("ViT-B/16", device="cpu")
+        self.model = self.model.cuda()
+        
+           
+    def inference(self, img):
+        image = self.preprocess(Image.fromarray(img)).unsqueeze(0).cuda()
+        return self.model.encode_image(image)
 
 
 class DataClassifierClip(Model):
@@ -104,8 +164,24 @@ class DataClassifierClip(Model):
 
 
 if __name__ == "__main__":
-    model = DataClassifierClip()
-    model_results = model.inference(cv2.imread("./data/clean_images/fitness portrait curly/46684915021_e79b9ea865_o0.jpg"))
-    for key in model_results:
-        print(key, model_results[key].argmax())
+    model = EmbeddingClip()
+    
+    # Same Image
+    a = model.inference(cv2.imread("images\\clean_images\\afro puff\\afro puff\\front\\001530.jpeg")).detach().cpu().numpy().flatten()
+    b = model.inference(cv2.imread("images\\clean_images\\afro space buns\\afro space buns\\front\\000460.jpeg")).detach().cpu().numpy().flatten()
+    
+    from numpy import dot
+    from numpy.linalg import norm
+    cos_sim = dot(a, b)/(norm(a)*norm(b))
+    print("Same", cos_sim)
+    
+    # Similar Image
+    a = model.inference(cv2.imread("images\\clean_images\\Blunt bangs\\long straight blunt bangs\\front\\001290.jpeg")).detach().cpu().numpy().flatten()
+    b = model.inference(cv2.imread("images\\clean_images\\Blunt bangs\\long straight blunt bangs\\front\\000340.jpeg")).detach().cpu().numpy().flatten()
+    
+    from numpy import dot
+    from numpy.linalg import norm
+    cos_sim = dot(a, b)/(norm(a)*norm(b))
+    print("Similar", cos_sim)
+    
         

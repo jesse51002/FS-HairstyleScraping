@@ -41,9 +41,6 @@ def main():
     folders_to_anaylze = set(folders_to_anaylze)
 
     for folder in folders_to_anaylze:
-        if Constants.BACKGROUND_REMOVED_NAME in folder:
-            continue
-
         print("Recleaning", folder)
         folder_path = os.path.join(root_dir, folder)
     

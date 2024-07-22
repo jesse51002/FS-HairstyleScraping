@@ -30,7 +30,7 @@ def find_images(path: str):
     
     if os.path.isdir(path):
         for sub in os.listdir(path):
-            if ".ipynb_checkpoints" in sub or sub == Constants.BACKGROUND_REMOVED_NAME:
+            if ".ipynb_checkpoints" in sub:
                 continue
             img_list += find_images(os.path.join(path, sub))
     else:
@@ -72,7 +72,9 @@ def get_gan_data_priorty_list():
             continue
         
         relevant_pth = "/".join(dataframe.loc[i, "ImagePath"].split("/")[-2:])
-        priority_pth_list.append(os.path.join(Constants.CLEAN_BODY_IMAGES_DIR, relevant_pth))
+        img_pth = os.path.join(Constants.CLEAN_BODY_IMAGES_DIR, relevant_pth)
+        if os.path.isfile(img_pth):
+            priority_pth_list.append(img_pth)
     
     return priority_pth_list
 
@@ -94,45 +96,62 @@ def delete_empty(path: str):
 
     
     
-def split_hair_dict(dict: dict, count : int):
+def split_hair_dict(hair_dict: dict, count : int):
     # Reads file if exists
     already_scraped = []
     if os.path.isfile(Constants.FINIHSED_RAW_TXT):
         with open(Constants.FINIHSED_RAW_TXT, 'r') as scrape_file:
             already_scraped = [x.strip() for x in scrape_file.readlines()]
     
+    keys_to_remove = []
+    
     # Removes values that have already been scraped
-    for style in dict.keys():
+    for style in hair_dict.keys():
         i = 0
-        while i < len(dict[style]):
-            style_type = dict[style][i]
-            together = f'\n{style}/{style_type}'
+        while i < len(hair_dict[style]):
+            style_type = hair_dict[style][i]
+            together = f'{style}/{style_type}'
                 
             if together in already_scraped:
-                dict[style].pop(i)
+                hair_dict[style].pop(i)
+                print(f"Already scraped {together}, skipping...")
             else:
                 i += 1
                     
         # Removes style if all the style_types have been completed
-        if len(dict[style]) == 0:
-            del dict[style]
-        
-        
+        if len(hair_dict[style]) == 0:
+            keys_to_remove.append(style)
+    
+    for key in keys_to_remove:
+        del hair_dict[key]
+    
+    flattened_dict_arr: list[tuple[str, str]] = []
+    for key in hair_dict.keys():
+        for value in hair_dict[key]:
+            flattened_dict_arr.append((key, value))
+  
     split_dicts = [{} for _ in range(count)]
     
-    keys = list(dict.keys())
     # calcualtes the amount of keys per dictionary
-    amount_per = math.ceil(len(keys) / count)
+    amount_per = math.ceil(len(flattened_dict_arr) / count)
     
     # splits the dictionary
     global_i = 0
     for i in range(count):
+        cur_flattened_arr = []
         for _ in range(amount_per):
-            if global_i >= len(keys):
+            if global_i >= len(flattened_dict_arr):
                 break
-            split_dicts[i][keys[global_i]] = dict[keys[global_i]]
+        
+            cur_flattened_arr.append(flattened_dict_arr[global_i])
             global_i += 1
-    
+        
+        for value in cur_flattened_arr:
+            if value[0] in split_dicts[i]:
+                split_dicts[i][value[0]].append(value[1])
+            else:
+                split_dicts[i][value[0]] = [value[1]]
+        
     return split_dicts
 
 
