@@ -4,6 +4,8 @@ data/
 flickr_creds
 model_weights/
 
+credentials.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

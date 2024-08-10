@@ -14,13 +14,12 @@ from flickrapi import FlickrAPI
 
 from flickr_utils.general import download_uri
 
-SCRAPE_COUNT = 4000
-COUNTRIES_SCRAPE_COUNT = 500
-COUNTRIES = []
 MAX_QUALITY = 5000
-PER_PAGE = 500 # 1-500
+PER_PAGE = 500
 
 IMAGE_DOWNLOAD_TIMEOUT = 20
+
+TIME_PER_IMAGE = 0.1
 
 
 # Return true if reduced
@@ -59,55 +58,51 @@ def download_image(url, raw_dir):
         
     return img_pth
     
-def flickr_scrape(search="city portrait", n=10, raw_dir=os.path.join(Constants.RAW_BODY_IMAGES_DIR, "test"), clean_queue=None):
-    actual_search = search
-        
-    # Gets the flickr creds
+def flickr_scrape(group_name, group_id, raw_dir=os.path.join(Constants.RAW_BODY_IMAGES_DIR, "test"), clean_queue=None):
     key, secret = get_flickr_creds()
     
     t = time.time()
     flickr = FlickrAPI(key, secret)
-    license = ()  # https://www.flickr.com/services/api/explore/?method=flickr.photos.licenses.getInfo
         
     if not os.path.exists(raw_dir):
         os.makedirs(raw_dir)  
     
-    photos = flickr.walk(
-        text=actual_search,  # http://www.flickr.com/services/api/flickr.photos.search.html
-        extras="url_o",
-        per_page=PER_PAGE,   # 1-500
-        license=license,
-        sort="relevance",
-        media="photos",
-    )
+    photos = flickr.data_walker(
+            flickr.groups.pools.getPhotos,
+            per_page=PER_PAGE,
+            group_id=group_id,
+            extras="url_o",
+            )
     
     amount = 0  
     start_time = time.time()
     # print(photos.keys)
     for photo in photos:
-        if amount > n:
-            break
- 
         try:
             # construct url https://www.flickr.com/services/api/misc.urls.html
             url = photo.get("url_o")  # original size
             if url is None:
                 url = f"https://farm{photo.get('farm')}.staticflickr.com/{photo.get('server')}/{photo.get('id')}_{photo.get('secret')}_b.jpg"
 
-            try:
-                img_pth = download_image(url, raw_dir)        
-            except Exception as err:
-                img_pth = None
-                print("Error when attempting to download image:", err)
+            attempts = 0
+            while attempts < 3:
+                try:
+                    img_pth = download_image(url, raw_dir)        
+                    break
+                except Exception as err:
+                    img_pth = None
+                    print(f"Error when attempting to download image (Attempt: {attempts}):", err)
+                    
+                attempts += 1
                 
             if clean_queue is not None and img_pth is not None:
                 clean_queue.put(img_pth)
-                print(f"Saved an {search} image {amount}")
+                print(f"Saved an {group_name} image {amount}")
                 
         except:
-            print("%g/%g error..." % (amount, n))
+            print("%g/%g error..." % (amount))
         
-        remaining_time = float(amount + 1) - (time.time()- start_time)
+        remaining_time = float(TIME_PER_IMAGE  * (amount + 1)) - (time.time()- start_time)
         if remaining_time > 0:
             time.sleep(remaining_time)
         
@@ -117,40 +112,25 @@ def flickr_scrape(search="city portrait", n=10, raw_dir=os.path.join(Constants.R
     print("Done. (%.1fs)" % (time.time() - t) + ("\nAll images saved to %s" % raw_dir))
 
 
-def is_country(query):
-    country = " ".join(query.split(" ")[:-1])
-    return country in COUNTRIES
-
-
-def body_scrape(query_list : list[str], clean_queue=None, lock=None): 
+def body_scrape(group_list : list[tuple[str, str]], clean_queue=None, lock=None): 
     # Creates file if it doesnt exist
     if not os.path.isfile(Constants.FINIHSED_BODY_RAW_TXT):
         file = open(Constants.FINIHSED_BODY_RAW_TXT, 'w')
         file.close()
         
         
-    # Instanties then countries constant
-    with open(Constants.COUNTRIES_FILES,'r') as file:
-        for x in file.readlines():
-            line = x.strip()
-            COUNTRIES.append(line)
-        
-    for query in query_list:
-        n = SCRAPE_COUNT if not is_country(query) else COUNTRIES_SCRAPE_COUNT
-        
-        print(f"Scraping {n} imagse from {query}")
-            
-        output_dir = os.path.join(Constants.RAW_BODY_IMAGES_DIR, query)
-        flickr_scrape(search=query, n=n, clean_queue=clean_queue, raw_dir=output_dir)
+    for group in group_list:
+        group_name, group_id = group[0], group[2]
+        print(f"Scraping images from {group_name}")
+                
+        output_dir = os.path.join(Constants.RAW_BODY_IMAGES_DIR, group_name)
+        flickr_scrape(group_name=group_name, group_id=group_id, clean_queue=clean_queue, raw_dir=output_dir)
         
         if lock is None:
             continue 
         # Records that it finished scraping
         with lock:
             with open(Constants.FINIHSED_BODY_RAW_TXT, 'a') as raw_finished_file:
-                raw_finished_file.write(f'\n{query}')
+                raw_finished_file.write(f'\n{group_name}')
     
-     
-if __name__ == "__main__":
-
-    flickr_scrape(search="city portrait extra")
+  

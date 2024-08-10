@@ -28,11 +28,13 @@ import torch
 
 
 from Preprocessor import Preprocess, raw_body_image_downloader
-from Utils import setStopFile, getStop, find_images, \
-    split_hair_dict, get_file_path, delete_empty, split_body_arr, get_gan_data_priorty_list
-from Querys import get_queries, create_body_queries
+from Utils import (
+    setStopFile, getStop, find_images, 
+    split_hair_dict, get_file_path, delete_empty,
+    split_body_arr, get_gan_data_priorty_list, split_group_arr)
+from Querys import get_queries, create_body_queries, create_group_queries
 from Scrapper import hair_scrape
-from FlickrScrape.flickr_scraper import body_scrape
+from FlickrScrape.flickr_scraper_groups import body_scrape
 
 
 import Constants
@@ -298,7 +300,7 @@ def launch():
             scrape_processes_count = Constants.HAIR_SCRAPE_PROCESSES
             clean_processes_count = Constants.HAIR_CLEAN_PROCESSES
         elif mode == "body":
-            splits = split_body_arr(create_body_queries(), Constants.BODY_SCRAPE_PROCESSES)
+            splits = split_group_arr(create_group_queries(), Constants.BODY_SCRAPE_PROCESSES)
             scrape_func = body_scrape
             scrape_processes_count = Constants.BODY_SCRAPE_PROCESSES
             clean_processes_count = Constants.BODY_CLEAN_PROCESSES

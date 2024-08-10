@@ -1,7 +1,9 @@
 import os
 import time
+from flickrapi import FlickrAPI
 import numpy as np
 import Constants
+from Utils import get_flickr_creds
 
 
 
@@ -116,6 +118,33 @@ def create_body_queries():
             queries.append(line + " portrait")  
         
     return queries      
+
+
+def create_group_queries():
+    group_urls = [
+        ["ebony goodess", "https://www.flickr.com/groups/35144195@N00/"],
+        ["black men", "https://www.flickr.com/groups/positive_black_men/"],
+        ["black people", "https://www.flickr.com/groups/blackpeople/pool/with/53781885136"],
+        ["black women", "https://www.flickr.com/groups/416360@N21/pool/"],
+        ["bbw", "https://www.flickr.com/groups/beautifulbigwomen/pool/"],   
+        ["men fashion", "https://www.flickr.com/groups/mensfashion/"],
+        ["color portrait", "https://www.flickr.com/groups/colourstreetportraits/pool/"],
+        ["free world", "https://www.flickr.com/groups/freeworld/pool/"],
+        ["portraits", "https://www.flickr.com/groups/portrait/"],
+    ]
+    
+    key, secret = get_flickr_creds()    
+    flickr = FlickrAPI(key, secret)
+    
+    for group in group_urls:
+        print(group)
+        flickr = FlickrAPI(key, secret, format='parsed-json')
+        id = flickr.urls.lookupGroup(url=group[1])["group"]['id']
+        group.append(id)
+        group[0] = f"groups_{group[0]}"
+        
+    return group_urls
+
             
 if __name__ == "__main__":
     get_queries()

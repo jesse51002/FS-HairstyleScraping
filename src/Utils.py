@@ -180,6 +180,33 @@ def split_body_arr(arr, count : int):
     
     return split_arrs
 
+def split_group_arr(arr, count : int):
+    # Reads file if exists
+    already_scraped = []
+    if os.path.isfile(Constants.FINIHSED_BODY_RAW_TXT):
+        with open(Constants.FINIHSED_BODY_RAW_TXT, 'r') as scrape_file:
+            already_scraped = [x.strip() for x in scrape_file.readlines()]
+    
+    for x in already_scraped:
+        for group in arr:
+            if group[0] == x:
+                arr.remove(group)
+                break
+        
+    amount_per = math.ceil(len(arr) / count)
+    split_arrs = [[] for _ in range(count)]
+    
+    # splits the dictionary
+    global_i = 0
+    for i in range(count):
+        for j in range(amount_per):
+            if global_i >= len(arr):
+                break
+            split_arrs[i].append(arr[global_i])
+            global_i += 1
+    
+    return split_arrs
+
 def get_file_path(pth : str, root_dir : str):
     clean_idx = pth.index(root_dir)
     pth_start = clean_idx + len(root_dir) + 1
