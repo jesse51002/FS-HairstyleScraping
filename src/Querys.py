@@ -123,14 +123,20 @@ def create_body_queries():
 def create_group_queries():
     group_urls = [
         ["ebony goodess", "https://www.flickr.com/groups/35144195@N00/"],
-        ["black men", "https://www.flickr.com/groups/positive_black_men/"],
+        ["black men", "https://www.flickr.com/groups/positive_black_men/"], 
         ["black people", "https://www.flickr.com/groups/blackpeople/pool/with/53781885136"],
         ["black women", "https://www.flickr.com/groups/416360@N21/pool/"],
+        ["brown skin beauty","https://www.flickr.com/groups/858545@N23/"],
+        ["indian girls", "https://www.flickr.com/groups/1603236@N25/pool/page3"],
+        # ["Bangladesh Flickr" ,"https://www.flickr.com/groups/efty/pool/with/53464911647"]
         ["bbw", "https://www.flickr.com/groups/beautifulbigwomen/pool/"],   
         ["men fashion", "https://www.flickr.com/groups/mensfashion/"],
+        ["men on the street", "https://www.flickr.com/groups/menonthestreet/pool/with/53638413952"]
+        ["trans_men", "https://www.flickr.com/groups/1872345@N25/pool/"],
         ["color portrait", "https://www.flickr.com/groups/colourstreetportraits/pool/"],
         ["free world", "https://www.flickr.com/groups/freeworld/pool/"],
         ["portraits", "https://www.flickr.com/groups/portrait/"],
+        ["portraits unlimited", "https://www.flickr.com/groups/portraits-unlimited/pool/with/53898759349"]
     ]
     
     key, secret = get_flickr_creds()    

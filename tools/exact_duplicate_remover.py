@@ -17,7 +17,7 @@ def remove_duplicates_from_gan():
     chosen = -1
     while chosen < 1 or chosen > 2:
         print("""
-        Delete already uploaded folder from?
+        Delete duplicates folder from?
             1. Raw
             2. Clean
             """)
@@ -67,9 +67,6 @@ def remove_duplicates_from_gan():
                     continue
                 folder_order.append(line)
 
-        for folder in os.listdir(root_dir):
-            if folder not in folder_order:
-                folder_order.append(folder)
     else:
         folder_order = os.listdir(root_dir)
 
@@ -102,7 +99,7 @@ def remove_duplicates_from_gan():
         folder_path = os.path.join(root_dir, folder)
         if folder in folders_finished:
             print(folder, "was already parsed in the pickle file")
-            continue
+            continue            
         
         folder_downloaded = False
         if not os.path.isdir(folder_path):
