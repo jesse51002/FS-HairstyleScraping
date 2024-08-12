@@ -30,7 +30,7 @@ class Clip(Model):
         ]).cuda()
         
            
-    def inference(self, img):
+    def inference(self, img, only_quaulity=False):
         image = self.preprocess(Image.fromarray(img)).unsqueeze(0).cuda()
     
         with torch.no_grad():
@@ -39,15 +39,24 @@ class Clip(Model):
             self.model.encode_text(self.quality_text)
             logits_per_image, logits_per_text = self.model(image, self.quality_text)
             quality_probs = logits_per_image.softmax(dim=-1).cpu().numpy()
-    
-            self.model.encode_text(self.human_text)
-            logits_per_image, logits_per_text = self.model(image, self.human_text)
-            human_probs = logits_per_image.softmax(dim=-1).cpu().numpy()
 
-        return {
-            "Quality": quality_probs, 
-            "Human": human_probs
+            if not only_quaulity:
+                self.model.encode_text(self.human_text)
+                logits_per_image, logits_per_text = self.model(image, self.human_text)
+                human_probs = logits_per_image.softmax(dim=-1).cpu().numpy()
+
+        final_dict = {}
+        if not only_quaulity:
+            final_dict = {
+                "Quality": quality_probs, 
+                "Human": human_probs
             }
+        else:
+            final_dict = {
+                "Quality": quality_probs, 
+            }
+        
+        return final_dict
 
 class HairClip(Model):
     

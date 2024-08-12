@@ -113,7 +113,7 @@ def create_pose_insights():
             total_images_done += 1
             print(f"{total_images_done}: {accepted} from {save_pth}")
     
-        if False:# folder_downloaded:
+        if folder_downloaded:
             shutil.rmtree(folder_path)
 
         with open(JSON_OUTPUT, "w") as f:

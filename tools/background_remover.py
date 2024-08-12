@@ -13,15 +13,22 @@ import Constants
 from aws_s3_downloader import download_aws_folder, get_download_folders
 from aws_s3_uploader import upload_aws_folder
 
+from ViTPose.pose_extract import pose_model
+from Clip import Clip
+
 TARGET_BACKGROUND_DIR = Constants.CLEAN_BODY_BACK_REM_IMAGES_DIR
 BATCH_SIZE = 4
 TARGET_SIZE = 1024
 root_dir = Constants.CLEAN_BODY_IMAGES_DIR
 
+CONFIDENCE = 0.5
+
 AWS_CLEAN_ROOT_KEY = Constants.CLEAN_BODY_BACK_REM_IMAGES_DIR.split("/")[-1] + "/"
 
 s3resource = boto3.client('s3')
 BUCKET_NAME = "fs-upper-body-gan-dataset"
+
+REJECTED_DIR = "data/rejected"
 
 
 def remove_background_from_folder(folder_path, back_rem_dir):
@@ -54,10 +61,89 @@ def remove_background_from_folder(folder_path, back_rem_dir):
             name = os.path.basename(pths[j]).split(".")[0] + ".jpg"
             cv2.imwrite(os.path.join(back_rem_dir, name), output_img)
 
+def get_pose_acceptance(img_pth, pose_inferencer):
+    img = cv2.imread(img_pth)
+    
+    pose = pose_inferencer.index_to_dic(pose_inferencer.inference(img)[0]["keypoints"])
+    
+    hand_max = max(
+        pose["right_shoulder"][1] if pose["right_shoulder"][2] > CONFIDENCE else 0, 
+        pose["left_shoulder"][1] if pose["left_shoulder"][2] > CONFIDENCE else 0
+        )
+    
+    elbow_offset = 50
+    hand_offset = 100
+    
+    hand_lowered = (
+        (pose["left_elbow"][1] > hand_max + elbow_offset or pose["left_elbow"][2] < CONFIDENCE) and
+        (pose["left_hand"][1] > hand_max + hand_offset or pose["left_hand"][2] < CONFIDENCE)  and
+        (pose["right_elbow"][1] > hand_max + elbow_offset or pose["right_elbow"][2] < CONFIDENCE)  and
+        (pose["right_hand"][1] > hand_max + hand_offset or pose["right_hand"][2] < CONFIDENCE) 
+    )
+    
+    return hand_lowered
+
+def remove_img(
+    folder_path,
+    back_rem_dir,
+    relative_pth,
+    send_to_rejected_dir=False
+    ):
+    img_pth = os.path.join(folder_path, relative_pth)
+    back_rem_img_pth = os.path.join(back_rem_dir, relative_pth)
+    
+    if not send_to_rejected_dir:
+        os.remove(back_rem_img_pth)
+    else:
+        os.makedirs(REJECTED_DIR, exist_ok=True)
+        
+        rejected_pth = os.path.join(REJECTED_DIR, os.path.basename(back_rem_img_pth))
+        os.rename(back_rem_img_pth, rejected_pth)
+        
+    os.remove(img_pth)
+    
+
+def remove_bad_images(
+    folder_path, 
+    back_rem_dir, 
+    pose_inferencer,
+    clip_model: Clip
+    ):
+    total = 0
+    removed = 0
+    for img_name in os.listdir(back_rem_dir):
+        total += 1
+        back_rem_img_pth = os.path.join(back_rem_dir, img_name)
+        pose_accepted = get_pose_acceptance(back_rem_img_pth, pose_inferencer)
+        realtive_pth = "/".join(back_rem_img_pth.replace("\\", "/").split("/")[-2:])
+        
+        if not pose_accepted:
+            remove_img(folder_path, back_rem_dir, realtive_pth)
+            print(f"Bad pose... Rejected")
+            removed += 1
+            continue
+        
+        raw_img = cv2.imread(back_rem_img_pth)
+        probs_dic = clip_model.inference(raw_img, only_quaulity=True)
+        clip_accepted = probs_dic["Quality"][0, 0] >= 0.5
+        
+        if not clip_accepted:
+            remove_img(folder_path, back_rem_dir, realtive_pth, send_to_rejected_dir=True)
+            print(f"Clip rejected based on quality... Rejected")
+            removed += 1
+            continue
+    
+    percentage = removed / total
+    
+    print(f"Finsihed removed bad poses.\nRemvoed {removed}/{total} = {percentage}")
+    
 
 def remove_images_background():
     if not os.path.isdir(TARGET_BACKGROUND_DIR):
         os.makedirs(TARGET_BACKGROUND_DIR)
+    
+    pose_inferencer = pose_model()
+    clip_model = Clip()
     
     rel_base = root_dir.split("/")[-1] + "/"
 
@@ -105,8 +191,10 @@ def remove_images_background():
             os.makedirs(back_rem_dir)
         
         remove_background_from_folder(folder_path, back_rem_dir)
+        remove_bad_images(folder_path, back_rem_dir, pose_inferencer, clip_model)
 
         if folder_downloaded:
+            upload_aws_folder(folder_path, key)
             shutil.rmtree(folder_path)
 
         upload_aws_folder(back_rem_dir, back_rem_key)
