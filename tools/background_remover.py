@@ -24,6 +24,37 @@ s3resource = boto3.client('s3')
 BUCKET_NAME = "fs-upper-body-gan-dataset"
 
 
+def remove_background_from_folder(folder_path, back_rem_dir):
+    names = os.listdir(folder_path)
+    image_pths = [os.path.join(folder_path, x) for x in names]
+        
+    for i in range(0, len(image_pths), BATCH_SIZE):
+    
+        pths = image_pths[i:min(i + BATCH_SIZE, len(image_pths))]
+        batched_input = np.zeros((len(pths), TARGET_SIZE, TARGET_SIZE, 3))
+    
+        for j in range(len(pths)):
+            img = cv2.imread(pths[j])
+            if img is None:
+                img = np.zeros((TARGET_SIZE, TARGET_SIZE, 3))
+            img = cv2.resize(img, (TARGET_SIZE, TARGET_SIZE), interpolation=cv2.INTER_CUBIC)
+            batched_input[j] = img
+                
+        batched_input = batched_input[:, :, :, ::-1].copy()
+            
+        unscaled_imgs = torch.tensor(batched_input).permute((0, 3, 1, 2))
+        unscaled_imgs = unscaled_imgs.float().to("cuda:0")
+        img = unscaled_imgs / 255
+    
+        output_imgs, pred_segments = remove_background(img)
+        output_imgs = output_imgs.transpose(0, 2, 3, 1)
+            
+        for j in range(len(pths)):
+            output_img = output_imgs[j]
+            name = os.path.basename(pths[j]).split(".")[0] + ".jpg"
+            cv2.imwrite(os.path.join(back_rem_dir, name), output_img)
+
+
 def remove_images_background():
     if not os.path.isdir(TARGET_BACKGROUND_DIR):
         os.makedirs(TARGET_BACKGROUND_DIR)
@@ -69,38 +100,11 @@ def remove_images_background():
             zip_process_thread.join()
             folder_downloaded = True
 
-        names = os.listdir(folder_path)
-        image_pths = [os.path.join(folder_path, x) for x in names]
-
         back_rem_dir = os.path.join(TARGET_BACKGROUND_DIR, folder)
         if not os.path.isdir(back_rem_dir):
             os.makedirs(back_rem_dir)
         
-        for i in range(0, len(image_pths), BATCH_SIZE):
-    
-            pths = image_pths[i:min(i + BATCH_SIZE, len(image_pths))]
-            batched_input = np.zeros((len(pths), TARGET_SIZE, TARGET_SIZE, 3))
-    
-            for j in range(len(pths)):
-                img = cv2.imread(pths[j])
-                if img is None:
-                    img = np.zeros((TARGET_SIZE, TARGET_SIZE, 3))
-                img = cv2.resize(img, (TARGET_SIZE, TARGET_SIZE), interpolation=cv2.INTER_CUBIC)
-                batched_input[j] = img
-                
-            batched_input = batched_input[:, :, :, ::-1].copy()
-            
-            unscaled_imgs = torch.tensor(batched_input).permute((0, 3, 1, 2))
-            unscaled_imgs = unscaled_imgs.float().to("cuda:0")
-            img = unscaled_imgs / 255
-    
-            output_imgs, pred_segments = remove_background(img)
-            output_imgs = output_imgs.transpose(0, 2, 3, 1)
-            
-            for j in range(len(pths)):
-                output_img = output_imgs[j]
-                name = os.path.basename(pths[j]).split(".")[0] + ".jpg"
-                cv2.imwrite(os.path.join(back_rem_dir, name), output_img)
+        remove_background_from_folder(folder_path, back_rem_dir)
 
         if folder_downloaded:
             shutil.rmtree(folder_path)

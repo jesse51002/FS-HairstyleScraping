@@ -1,8 +1,10 @@
 import os
-import psutil
+os.environ["CRYPTOGRAPHY_OPENSSL_NO_LEGACY"] = "1"
+
 import boto3
 from boto3.s3.transfer import TransferConfig
 import shutil
+import psutil
 
 import sys
 sys.path.insert(0, './src')

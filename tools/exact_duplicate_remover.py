@@ -1,5 +1,6 @@
 import hashlib
 import os
+os.environ["CRYPTOGRAPHY_OPENSSL_NO_LEGACY"] = "1"
 
 import sys
 sys.path.insert(0,'./src')
