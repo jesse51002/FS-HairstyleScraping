@@ -450,6 +450,10 @@ def Preprocess(clean_queue, accept_queue,
         body_parser = None
         clip_model = HairClip()
     
+    total = 0
+    accepted = 0
+    rejected = 0
+    
     # Loop until errors out from timeout (nothing more to clean)
     while True:
         # End early if wants to exit
@@ -473,6 +477,17 @@ def Preprocess(clean_queue, accept_queue,
             clip_model=clip_model
             )
         
+        total += 1
+        
+        if len(final_pths) == 0:
+            rejected += 1
+        else:
+            accepted += 1
+        
+        if total % 50 == 0:
+            accepted_perc = accepted / total
+            print(f"\n\nACCETPED {accepted}/{total} = accepted_perc\n\n")
+            
         # Adds to the queue for acceptance
         if accept_queue is not None:
             for final_pth in final_pths:
