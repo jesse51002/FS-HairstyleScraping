@@ -1,5 +1,5 @@
 import os
-
+import psutil
 import boto3
 from boto3.s3.transfer import TransferConfig
 import shutil
@@ -145,9 +145,16 @@ if __name__ == "__main__":
                 continue
         else:
             print(f"{chosen} is an invalid choice, pick a valid choice")
-            
+    
+    # Sets to high proitoity
+    p = psutil.Process(os.getpid())
+    p.nice(psutil.HIGH_PRIORITY_CLASS)  # set
+    
     if chosen == 1:
-        upload_to_aws(Constants.RAW_BODY_IMAGES_DIR, finished_upload_file=Constants.FINIHSED_BODY_RAW_UPLOAD)
+        upload_to_aws(
+            Constants.RAW_BODY_IMAGES_DIR, 
+            finished_upload_file=Constants.FINIHSED_BODY_RAW_UPLOAD, 
+            completed_scrape_file=Constants.FINIHSED_BODY_RAW_TXT)
     elif chosen == 2:
         upload_to_aws(Constants.CLEAN_BODY_IMAGES_DIR, finished_upload_file=Constants.FINIHSED_BODY_CLEAN_UPLOAD)
 

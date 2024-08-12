@@ -131,7 +131,7 @@ def create_group_queries():
         # ["Bangladesh Flickr" ,"https://www.flickr.com/groups/efty/pool/with/53464911647"]
         ["bbw", "https://www.flickr.com/groups/beautifulbigwomen/pool/"],   
         ["men fashion", "https://www.flickr.com/groups/mensfashion/"],
-        ["men on the street", "https://www.flickr.com/groups/menonthestreet/pool/with/53638413952"]
+        ["men on the street", "https://www.flickr.com/groups/menonthestreet/pool/with/53638413952"],
         ["trans_men", "https://www.flickr.com/groups/1872345@N25/pool/"],
         ["color portrait", "https://www.flickr.com/groups/colourstreetportraits/pool/"],
         ["free world", "https://www.flickr.com/groups/freeworld/pool/"],

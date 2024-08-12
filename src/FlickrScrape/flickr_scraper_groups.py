@@ -1,4 +1,6 @@
 import sys
+
+import psutil
 sys.path.insert(0,'./src')
 sys.path.insert(0,'./src/FlickrScrape')
 
@@ -15,7 +17,7 @@ from flickrapi import FlickrAPI
 from flickr_utils.general import download_uri
 
 MAX_QUALITY = 5000
-PER_PAGE = 500
+PER_PAGE = 500  
 
 IMAGE_DOWNLOAD_TIMEOUT = 20
 
@@ -113,6 +115,9 @@ def flickr_scrape(group_name, group_id, raw_dir=os.path.join(Constants.RAW_BODY_
 
 
 def body_scrape(group_list : list[tuple[str, str]], clean_queue=None, lock=None): 
+    p = psutil.Process(os.getpid())
+    p.nice(psutil.HIGH_PRIORITY_CLASS)  # set
+    
     # Creates file if it doesnt exist
     if not os.path.isfile(Constants.FINIHSED_BODY_RAW_TXT):
         file = open(Constants.FINIHSED_BODY_RAW_TXT, 'w')
