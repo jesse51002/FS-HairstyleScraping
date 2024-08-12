@@ -486,7 +486,7 @@ def Preprocess(clean_queue, accept_queue,
         
         if total % 50 == 0:
             accepted_perc = accepted / total
-            print(f"\n\nACCETPED {accepted}/{total} = accepted_perc\n\n")
+            print(f"\n\nACCETPED {accepted}/{total} = {accepted_perc}\n\n")
             
         # Adds to the queue for acceptance
         if accept_queue is not None:
