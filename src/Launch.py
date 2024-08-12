@@ -295,12 +295,10 @@ def launch():
         clean_processes_count = 1
         
         if mode == "hair":
-            splits = split_hair_dict(get_queries(), Constants.HAIR_SCRAPE_PROCESSES)
             scrape_func = hair_scrape
             scrape_processes_count = Constants.HAIR_SCRAPE_PROCESSES
             clean_processes_count = Constants.HAIR_CLEAN_PROCESSES
         elif mode == "body":
-            splits = split_group_arr(create_group_queries(), Constants.BODY_SCRAPE_PROCESSES)
             scrape_func = body_scrape
             scrape_processes_count = Constants.BODY_SCRAPE_PROCESSES
             clean_processes_count = Constants.BODY_CLEAN_PROCESSES
@@ -309,6 +307,11 @@ def launch():
         should_clean = chosen <= 2 or chosen == 4
 
         if should_scrape:
+            if mode == "hair":
+                splits = split_hair_dict(get_queries(), Constants.HAIR_SCRAPE_PROCESSES)
+            elif mode == "body":
+                splits = split_group_arr(create_group_queries(), Constants.BODY_SCRAPE_PROCESSES)
+                
             for i in range(scrape_processes_count):
                 # Scapes and downloads
                 scrape_process = Process(target=scrape_func, args=(splits[i], clean_queue, scrape_done_lock))

@@ -1,4 +1,5 @@
 import os
+os.environ["CRYPTOGRAPHY_OPENSSL_NO_LEGACY"] = "1"
 
 import boto3
 from boto3.s3.transfer import TransferConfig
